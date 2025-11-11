@@ -14,6 +14,7 @@ Este documento contém exemplos de testes para todos os endpoints da API.
 4. [Badges](#badges)
 5. [Sprints e Produtividade](#sprints-e-produtividade)
 6. [Alertas IA](#alertas-ia)
+7. [IA Generativa e Visão Computacional](#ia-generativa-e-visão-computacional)
 
 ---
 
@@ -1026,6 +1027,371 @@ Authorization: Bearer {token}
 curl -X GET http://localhost:8080/api/alertas/usuario/1/analise-risco \
   -H "Authorization: Bearer {token}"
 ```
+
+---
+
+## 🤖 IA Generativa e Visão Computacional
+
+**Base URL:** `/ia`
+
+**Autenticação:** Requerida (Bearer Token)
+**Roles:** PROFISSIONAL, GESTOR
+
+### 1. Gerar Feedback Empático usando GPT
+
+**Endpoint:** `POST /ia/feedback`
+
+**Headers:**
+```
+Authorization: Bearer {token}
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "usuarioId": 1,
+  "humor": 2,
+  "produtividade": "baixa"
+}
+```
+
+**Response 201 Created:**
+```json
+{
+  "mensagem": "Você parece cansado hoje. Tente fazer uma pausa curta e respirar fundo. Estamos aqui para apoiá-lo.",
+  "timestamp": "2024-11-11T15:30:00",
+  "idAlerta": 123
+}
+```
+
+**cURL:**
+```bash
+curl -X POST http://localhost:8080/ia/feedback \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "usuarioId": 1,
+    "humor": 2,
+    "produtividade": "baixa"
+  }'
+```
+
+---
+
+### 2. Gerar Análise Semanal Inteligente usando GPT
+
+**Endpoint:** `POST /ia/analise`
+
+**Headers:**
+```
+Authorization: Bearer {token}
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "usuarioId": 1
+}
+```
+
+**Response 200 OK:**
+```json
+{
+  "resumoSemanal": "Analisando seus dados dos últimos 7 dias, você manteve uma média de humor de 3.2/5 e energia de 3.5/5. Sua produtividade está estável. Recomendamos manter hábitos saudáveis e fazer pausas regulares.",
+  "riscoBurnout": "medio",
+  "sugestoes": [
+    "Mantenha hábitos saudáveis de sono e alimentação",
+    "Faça pausas regulares durante o trabalho",
+    "Monitore seus níveis de humor e energia diariamente"
+  ],
+  "timestamp": "2024-11-11T15:30:00"
+}
+```
+
+**cURL:**
+```bash
+curl -X POST http://localhost:8080/ia/analise \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "usuarioId": 1
+  }'
+```
+
+---
+
+### 3. Assistente Pessoal - Conteúdo Personalizado
+
+**Endpoint:** `POST /ia/assistente`
+
+**Headers:**
+```
+Authorization: Bearer {token}
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "usuarioId": 1,
+  "tipoConsulta": "curiosidade"
+}
+```
+
+**Tipos disponíveis:**
+- `curiosidade` - Curiosidades educativas
+- `prevencao` - Dicas de prevenção de burnout
+- `motivacao` - Mensagens motivacionais
+- `dica_pratica` - Dicas práticas acionáveis
+- `reflexao` - Reflexões profundas
+
+**Response 200 OK:**
+```json
+{
+  "titulo": "Curiosidade: O Poder das Pausas",
+  "conteudo": "Estudos mostram que fazer pausas de 5-10 minutos a cada 90 minutos de trabalho pode aumentar a produtividade em até 30%. O cérebro precisa de momentos de descanso para processar informações e manter o foco.",
+  "tipo": "curiosidade",
+  "acoesPraticas": [
+    "Configure lembretes para pausas a cada 90 minutos",
+    "Use a técnica Pomodoro (25min trabalho, 5min pausa)",
+    "Durante as pausas, faça algo completamente diferente do trabalho"
+  ],
+  "reflexao": "Como você pode incorporar pausas regulares na sua rotina?",
+  "timestamp": "2024-11-11T15:30:00"
+}
+```
+
+**cURL:**
+```bash
+curl -X POST http://localhost:8080/ia/assistente \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "usuarioId": 1,
+    "tipoConsulta": "curiosidade"
+  }'
+```
+
+---
+
+### 4. 👁️ Analisar Ambiente de Trabalho usando Visão Computacional (Deep Learning)
+
+**Endpoint:** `POST /ia/analise-ambiente`
+
+**⚠️ IMPORTANTE:** Este endpoint usa **multipart/form-data** para upload de imagem.
+
+**Headers:**
+```
+Authorization: Bearer {token}
+Content-Type: multipart/form-data
+```
+
+**Request (multipart/form-data):**
+- `foto`: Arquivo de imagem (JPEG, PNG, etc)
+- `usuarioId`: ID do usuário (integer)
+
+**Response 200 OK:**
+```json
+{
+  "nivelFoco": "alto",
+  "organizacao": "boa",
+  "iluminacao": "excelente",
+  "objetosDetectados": [
+    "desk (95.23%)",
+    "computer (87.45%)",
+    "monitor (82.10%)"
+  ],
+  "sugestoes": [
+    "Mantenha o ambiente organizado para melhorar a produtividade",
+    "Faça pausas regulares para descansar os olhos",
+    "Considere adicionar plantas para melhorar o ambiente"
+  ],
+  "resumoAnalise": "Análise realizada com modelo de Deep Learning. Detectados 3 elementos no ambiente. Nível de foco: alto. Organização: boa. Iluminação: excelente.",
+  "timestamp": "2024-11-11T15:30:00",
+  "idAlerta": 124
+}
+```
+
+#### Como Testar no Swagger UI:
+
+1. Acesse: `http://localhost:8080/swagger-ui.html`
+2. Faça login em `/api/auth/login` para obter o token
+3. Clique em "Authorize" e cole o token (sem "Bearer")
+4. Vá para o endpoint `POST /ia/analise-ambiente`
+5. Clique em "Try it out"
+6. Preencha:
+   - `usuarioId`: 1
+   - `foto`: Clique em "Choose File" e selecione uma imagem
+7. Clique em "Execute"
+8. Veja a resposta com a análise do ambiente
+
+#### Como Testar com cURL:
+
+```bash
+curl -X POST http://localhost:8080/ia/analise-ambiente \
+  -H "Authorization: Bearer {token}" \
+  -F "foto=@/caminho/para/sua/imagem.jpg" \
+  -F "usuarioId=1"
+```
+
+**Exemplo com imagem local:**
+```bash
+# Windows (PowerShell)
+curl -X POST http://localhost:8080/ia/analise-ambiente `
+  -H "Authorization: Bearer {token}" `
+  -F "foto=@C:\Users\crist\Downloads\ambiente-trabalho.jpg" `
+  -F "usuarioId=1"
+
+# Linux/Mac
+curl -X POST http://localhost:8080/ia/analise-ambiente \
+  -H "Authorization: Bearer {token}" \
+  -F "foto=@/home/usuario/ambiente-trabalho.jpg" \
+  -F "usuarioId=1"
+```
+
+#### Como Testar com Postman:
+
+1. **Método:** POST
+2. **URL:** `http://localhost:8080/ia/analise-ambiente`
+3. **Headers:**
+   - `Authorization`: `Bearer {seu-token}`
+4. **Body:**
+   - Selecione `form-data`
+   - Adicione campo `foto` do tipo `File` e selecione sua imagem
+   - Adicione campo `usuarioId` do tipo `Text` com valor `1`
+5. Clique em "Send"
+
+#### Como Testar com JavaScript (Fetch):
+
+```javascript
+const formData = new FormData();
+formData.append('foto', document.getElementById('fileInput').files[0]);
+formData.append('usuarioId', 1);
+
+fetch('http://localhost:8080/ia/analise-ambiente', {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${token}`
+  },
+  body: formData
+})
+.then(response => response.json())
+.then(data => {
+  console.log('Análise do ambiente:', data);
+  console.log('Nível de foco:', data.nivelFoco);
+  console.log('Organização:', data.organizacao);
+  console.log('Objetos detectados:', data.objetosDetectados);
+  console.log('Sugestões:', data.sugestoes);
+})
+.catch(error => console.error('Erro:', error));
+```
+
+#### Como Testar com Python (requests):
+
+```python
+import requests
+
+url = "http://localhost:8080/ia/analise-ambiente"
+token = "seu-token-aqui"
+
+headers = {
+    "Authorization": f"Bearer {token}"
+}
+
+files = {
+    "foto": open("ambiente-trabalho.jpg", "rb")
+}
+
+data = {
+    "usuarioId": 1
+}
+
+response = requests.post(url, headers=headers, files=files, data=data)
+print(response.json())
+```
+
+#### Formatos de Imagem Suportados:
+
+- JPEG (.jpg, .jpeg)
+- PNG (.png)
+- WebP (.webp)
+- Tamanho recomendado: até 10MB
+
+#### O que o Endpoint Faz:
+
+1. **Recebe a imagem** do ambiente de trabalho
+2. **Processa com Deep Learning** usando modelo Google ViT-Base via Hugging Face
+3. **Detecta objetos** na imagem (mesa, computador, monitor, etc)
+4. **Analisa características:**
+   - Nível de foco (alto/médio/baixo)
+   - Organização (excelente/boa/regular/ruim)
+   - Iluminação (excelente/adequada/insuficiente)
+5. **Gera sugestões** práticas para melhorar o ambiente
+6. **Salva no banco** de dados Oracle na tabela `t_mt_alertas_ia` com tipo `ANALISE_AMBIENTE`
+
+#### Exemplo de Resposta com Ambiente Organizado:
+
+```json
+{
+  "nivelFoco": "alto",
+  "organizacao": "excelente",
+  "iluminacao": "excelente",
+  "objetosDetectados": [
+    "desk (98.5%)",
+    "monitor (95.2%)",
+    "keyboard (92.1%)",
+    "window (88.7%)"
+  ],
+  "sugestoes": [
+    "Mantenha o ambiente organizado para melhorar a produtividade",
+    "Faça pausas regulares para descansar os olhos",
+    "Considere adicionar plantas para melhorar o ambiente"
+  ],
+  "resumoAnalise": "Análise realizada com modelo de Deep Learning. Detectados 4 elementos no ambiente. Nível de foco: alto. Organização: excelente. Iluminação: excelente.",
+  "timestamp": "2024-11-11T15:30:00",
+  "idAlerta": 125
+}
+```
+
+#### Exemplo de Resposta com Ambiente Desorganizado:
+
+```json
+{
+  "nivelFoco": "baixo",
+  "organizacao": "regular",
+  "iluminacao": "adequada",
+  "objetosDetectados": [
+    "clutter (85.3%)",
+    "desk (72.1%)",
+    "papers (68.9%)"
+  ],
+  "sugestoes": [
+    "Organize seu espaço de trabalho para melhorar o foco",
+    "Considere remover distrações visuais do ambiente",
+    "Mantenha o ambiente organizado para melhorar a produtividade"
+  ],
+  "resumoAnalise": "Análise realizada com modelo de Deep Learning. Detectados 3 elementos no ambiente. Nível de foco: baixo. Organização: regular. Iluminação: adequada.",
+  "timestamp": "2024-11-11T15:30:00",
+  "idAlerta": 126
+}
+```
+
+#### Troubleshooting:
+
+**Erro 503 (Service Unavailable):**
+- O modelo Hugging Face pode estar carregando
+- O sistema usa análise heurística como fallback
+- Tente novamente em alguns segundos
+
+**Erro 400 (Bad Request):**
+- Verifique se o arquivo é uma imagem válida
+- Verifique se o `usuarioId` é um número válido
+
+**Erro 401 (Unauthorized):**
+- Verifique se o token JWT está válido
+- Faça login novamente para obter um novo token
 
 ---
 
