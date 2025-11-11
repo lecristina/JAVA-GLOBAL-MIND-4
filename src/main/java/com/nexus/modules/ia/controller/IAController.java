@@ -1,5 +1,6 @@
 package com.nexus.modules.ia.controller;
 
+import com.nexus.application.dto.AnaliseAmbienteResponseDTO;
 import com.nexus.application.dto.AnaliseRequestDTO;
 import com.nexus.application.dto.AnaliseResponseDTO;
 import com.nexus.application.dto.AssistenteRequestDTO;
@@ -13,9 +14,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/ia")
@@ -60,6 +63,23 @@ public class IAController {
     @PreAuthorize("hasAnyRole('PROFISSIONAL', 'GESTOR')")
     public ResponseEntity<AssistenteResponseDTO> gerarConteudoAssistente(@Valid @RequestBody AssistenteRequestDTO request) {
         AssistenteResponseDTO response = iaService.gerarConteudoAssistente(request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping(value = "/analise-ambiente", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(
+        summary = "Analisar ambiente de trabalho usando Visão Computacional (Deep Learning)",
+        description = "Analisa uma foto do ambiente de trabalho usando modelo de Deep Learning (Hugging Face). " +
+                     "Detecta objetos, analisa organização, iluminação e nível de foco. " +
+                     "Retorna sugestões práticas para melhorar o ambiente de trabalho. " +
+                     "A análise é salva na tabela t_mt_alertas_ia com tipo 'ANALISE_AMBIENTE'."
+    )
+    @PreAuthorize("hasAnyRole('PROFISSIONAL', 'GESTOR')")
+    public ResponseEntity<AnaliseAmbienteResponseDTO> analisarAmbienteTrabalho(
+            @RequestParam("foto") MultipartFile foto,
+            @RequestParam("usuarioId") Integer usuarioId) {
+        
+        AnaliseAmbienteResponseDTO response = iaService.analisarAmbienteTrabalho(foto, usuarioId);
         return ResponseEntity.ok(response);
     }
 }

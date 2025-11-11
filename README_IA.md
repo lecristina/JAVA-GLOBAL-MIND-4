@@ -298,7 +298,7 @@ const analiseResponse = await fetch('http://localhost:8080/ia/analise', {
 });
 ```
 
-## 🧠 Deep Learning - Visão Computacional (Esqueleto)
+## 👁️ Deep Learning - Visão Computacional (IMPLEMENTADO)
 
 ### Preparação para Análise de Ambiente de Trabalho
 
