@@ -5,6 +5,8 @@ import com.nexus.application.dto.AnaliseRequestDTO;
 import com.nexus.application.dto.AnaliseResponseDTO;
 import com.nexus.application.dto.AssistenteRequestDTO;
 import com.nexus.application.dto.AssistenteResponseDTO;
+import com.nexus.application.dto.ChatRequestDTO;
+import com.nexus.application.dto.ChatResponseDTO;
 import com.nexus.application.dto.FeedbackRequestDTO;
 import com.nexus.application.dto.FeedbackResponseDTO;
 import com.nexus.modules.ia.service.IAService;
@@ -66,36 +68,41 @@ public class IAController {
         return ResponseEntity.ok(response);
     }
 
+    // DESABILITADO: Funcionalidade de análise de imagem removida temporariamente
+    /*
     @PostMapping(value = "/analise-ambiente", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(
         summary = "Analisar ambiente de trabalho usando Visão Computacional (Deep Learning)",
-        description = "Analisa uma foto do ambiente de trabalho usando modelo de Deep Learning (Hugging Face). " +
-                     "Detecta objetos, analisa organização, iluminação e nível de foco. " +
-                     "Retorna sugestões práticas para melhorar o ambiente de trabalho. " +
-                     "A análise é salva na tabela t_mt_alertas_ia com tipo 'ANALISE_AMBIENTE'. " +
-                     "\n\n" +
-                     "**Como testar no Swagger:**\n" +
-                     "1. Clique em 'Try it out'\n" +
-                     "2. Preencha 'usuarioId' (ex: 1)\n" +
-                     "3. Clique em 'Choose File' e selecione uma imagem\n" +
-                     "4. Clique em 'Execute'\n" +
-                     "5. Aguarde alguns segundos (primeira chamada pode demorar - modelo carregando)"
-    )
-    @io.swagger.v3.oas.annotations.parameters.RequestBody(
-        description = "Upload de imagem do ambiente de trabalho",
-        required = true,
-        content = @io.swagger.v3.oas.annotations.media.Content(
-            mediaType = MediaType.MULTIPART_FORM_DATA_VALUE
-        )
+        description = "DESABILITADO TEMPORARIAMENTE"
     )
     @PreAuthorize("hasAnyRole('PROFISSIONAL', 'GESTOR')")
     public ResponseEntity<AnaliseAmbienteResponseDTO> analisarAmbienteTrabalho(
-            @io.swagger.v3.oas.annotations.Parameter(description = "Arquivo de imagem (JPEG, PNG, etc)", required = true)
             @RequestParam("foto") MultipartFile foto,
-            @io.swagger.v3.oas.annotations.Parameter(description = "ID do usuário", required = true, example = "1")
             @RequestParam("usuarioId") Integer usuarioId) {
-        
-        AnaliseAmbienteResponseDTO response = iaService.analisarAmbienteTrabalho(foto, usuarioId);
+        throw new RuntimeException("Funcionalidade de análise de imagem desabilitada temporariamente");
+    }
+    */
+
+    @PostMapping("/chat")
+    @Operation(
+        summary = "Chat conversacional com IA - Conversa dinâmica e contextual",
+        description = "Permite conversar com a IA de forma natural e dinâmica. " +
+                     "A IA mantém o histórico da conversa e contexto do usuário. " +
+                     "Você pode fazer perguntas, pedir conselhos, discutir problemas, etc. " +
+                     "A conversa é salva automaticamente para manter contexto.\n\n" +
+                     "**Como usar:**\n" +
+                     "1. Primeira mensagem: envie apenas 'usuarioId' e 'mensagem' (sem 'idConversaPai')\n" +
+                     "2. Continuar conversa: use o 'idConversaPai' retornado na resposta anterior\n" +
+                     "3. Nova conversa: não envie 'idConversaPai' ou aguarde 2 horas\n\n" +
+                     "**Exemplos de mensagens:**\n" +
+                     "- 'Estou me sentindo muito estressado no trabalho'\n" +
+                     "- 'Como posso melhorar minha produtividade?'\n" +
+                     "- 'Me dê dicas para evitar burnout'\n" +
+                     "- 'O que você acha sobre trabalhar remotamente?'"
+    )
+    @PreAuthorize("hasAnyRole('PROFISSIONAL', 'GESTOR')")
+    public ResponseEntity<ChatResponseDTO> chat(@Valid @RequestBody ChatRequestDTO request) {
+        ChatResponseDTO response = iaService.chatConversacional(request);
         return ResponseEntity.ok(response);
     }
 }

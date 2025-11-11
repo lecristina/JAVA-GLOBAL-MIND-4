@@ -6,7 +6,6 @@ import com.nexus.domain.model.Sprint;
 import com.nexus.infrastructure.repository.HumorRepository;
 import com.nexus.infrastructure.repository.HabitoRepository;
 import com.nexus.infrastructure.repository.SprintRepository;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -18,24 +17,20 @@ import java.util.List;
 @Slf4j
 public class AIService {
 
-    private final HumorRepository humorRepository;
-    private final HabitoRepository habitoRepository;
-    private final SprintRepository sprintRepository;
+    @Autowired
+    private HumorRepository humorRepository;
     
-    private GPTService gptService;
-
-    public AIService(
-            HumorRepository humorRepository,
-            HabitoRepository habitoRepository,
-            SprintRepository sprintRepository) {
-        this.humorRepository = humorRepository;
-        this.habitoRepository = habitoRepository;
-        this.sprintRepository = sprintRepository;
-    }
-
+    @Autowired
+    private HabitoRepository habitoRepository;
+    
+    @Autowired
+    private SprintRepository sprintRepository;
+    
     @Autowired(required = false)
-    public void setGptService(GPTService gptService) {
-        this.gptService = gptService;
+    private GPTService gptService;
+    
+    // Construtor padrão vazio para Spring
+    public AIService() {
     }
 
     /**

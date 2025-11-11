@@ -1,0 +1,7 @@
+# Arquivo de exemplo para configuração local
+# Copie este arquivo para application-local.properties e preencha com sua API key
+# application-local.properties está no .gitignore e NÃO será commitado
+
+# Spring AI (OpenAI)
+spring.ai.openai.api-key=sk-sua-chave-aqui
+

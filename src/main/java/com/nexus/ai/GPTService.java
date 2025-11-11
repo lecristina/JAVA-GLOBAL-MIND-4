@@ -28,9 +28,11 @@ public class GPTService {
     private String apiKey;
     private String model;
     private Double temperature;
+    
+    // Gemini removido temporariamente - usando apenas OpenAI
 
     public GPTService(
-            @Value("${spring.ai.openai.api-key:your-api-key-here}") String apiKey,
+            @Value("${spring.ai.openai.api-key}") String apiKey,
             @Value("${spring.ai.openai.chat.options.model:gpt-3.5-turbo}") String model,
             @Value("${spring.ai.openai.chat.options.temperature:0.7}") Double temperature) {
         this.httpClient = HttpClient.newBuilder()
@@ -40,29 +42,68 @@ public class GPTService {
         this.apiKey = apiKey;
         this.model = model;
         this.temperature = temperature;
+        
+        // Log para debug (apenas primeiros caracteres por segurança)
+        if (apiKey != null && !apiKey.isEmpty() && !apiKey.equals("your-api-key-here")) {
+            String apiKeyPreview = apiKey.length() > 15 ? apiKey.substring(0, 15) + "..." : apiKey;
+            log.info("✅ GPTService inicializado com API Key: {}", apiKeyPreview);
+        } else {
+            log.warn("⚠️ GPTService inicializado SEM API Key válida. API Key recebida: {}", 
+                    apiKey != null ? (apiKey.length() > 20 ? apiKey.substring(0, 20) + "..." : apiKey) : "null");
+        }
     }
 
     /**
-     * Gera feedback empático usando GPT
+     * Gera feedback empático usando GPT com histórico e variação
      */
     public String gerarFeedbackEmpatico(Integer humor, String produtividade) {
+        return gerarFeedbackEmpatico(humor, produtividade, null, 0.7);
+    }
+
+    /**
+     * Gera feedback empático usando GPT com histórico e variação
+     */
+    public String gerarFeedbackEmpatico(Integer humor, String produtividade, String contextoHistorico, double temperatura) {
         try {
             if (apiKey == null || apiKey.equals("your-api-key-here") || apiKey.isEmpty()) {
                 log.warn("⚠️ API Key do OpenAI não configurada. Retornando feedback padrão (FALLBACK - não usa IA real).");
                 return gerarFeedbackPadrao(humor, produtividade);
             }
 
-            String prompt = String.format(
-                "Você é um assistente pessoal de saúde mental e bem-estar no trabalho de TI. " +
-                "Gere uma mensagem curta, empática e profissional (máximo 150 caracteres) " +
-                "para um usuário com humor=%d/5 e produtividade=%s. " +
-                "Seja positivo, encorajador, prático e ofereça uma sugestão acionável. " +
-                "A mensagem deve ser como um ajudante pessoal que realmente se importa. " +
-                "Responda APENAS com a mensagem, sem explicações adicionais.",
-                humor, produtividade
-            );
+            StringBuilder promptBuilder = new StringBuilder();
+            promptBuilder.append("Você é um assistente pessoal especializado em saúde mental e bem-estar no trabalho de TI. ");
+            promptBuilder.append("Você tem anos de experiência em psicologia organizacional, produtividade e prevenção de burnout. ");
+            promptBuilder.append("Seu estilo é empático, profissional e acolhedor, como um mentor que realmente se importa.\n\n");
+            
+            promptBuilder.append("CONTEXTO DO USUÁRIO:\n");
+            promptBuilder.append(String.format("- Nível de humor: %d/5 (1=muito triste, 5=muito feliz)\n", humor));
+            promptBuilder.append(String.format("- Nível de produtividade: %s\n\n", produtividade));
+            
+            // Adiciona contexto de histórico se disponível
+            if (contextoHistorico != null && !contextoHistorico.isEmpty()) {
+                promptBuilder.append(contextoHistorico).append("\n\n");
+            }
+            
+            promptBuilder.append("INSTRUÇÕES:\n");
+            promptBuilder.append("1. Analise o contexto do usuário com profundidade\n");
+            promptBuilder.append("2. Reconheça os sentimentos e desafios dele\n");
+            promptBuilder.append("3. Gere uma mensagem curta (máximo 150 caracteres) que seja:\n");
+            promptBuilder.append("   - Empática e acolhedora\n");
+            promptBuilder.append("   - Prática e acionável\n");
+            promptBuilder.append("   - Específica para o contexto dele\n");
+            promptBuilder.append("   - Como um amigo experiente que oferece apoio genuíno\n");
+            promptBuilder.append("   - ÚNICA e DIFERENTE de respostas anteriores (se houver histórico)\n");
+            promptBuilder.append("4. Inclua uma sugestão concreta que ele pode fazer AGORA\n");
+            promptBuilder.append("5. Varie a abordagem: use diferentes metáforas, exemplos, ou estruturas\n\n");
+            
+            promptBuilder.append("EXEMPLOS DE TOM (use como inspiração, mas seja criativo):\n");
+            promptBuilder.append("- Se humor baixo: 'Entendo que está difícil hoje. Que tal uma pausa de 5min para respirar? Você merece.'\n");
+            promptBuilder.append("- Se produtividade baixa: 'Dias assim acontecem. Pequenos passos contam. Comece com uma tarefa simples.'\n\n");
+            
+            promptBuilder.append("IMPORTANTE: Seja criativo e original. Evite repetir estruturas ou frases das respostas anteriores.\n\n");
+            promptBuilder.append("Responda APENAS com a mensagem, sem explicações adicionais.");
 
-            return chamarGPT(prompt);
+            return chamarGPT(promptBuilder.toString(), temperatura);
         } catch (Exception e) {
             log.error("Erro ao gerar feedback empático com GPT", e);
             return gerarFeedbackPadrao(humor, produtividade);
@@ -73,14 +114,21 @@ public class GPTService {
      * Gera conteúdo personalizado do assistente pessoal
      */
     public AssistentePersonalizado gerarConteudoAssistente(String tipoConsulta, String contextoUsuario) {
+        return gerarConteudoAssistente(tipoConsulta, contextoUsuario, null, 0.7);
+    }
+
+    /**
+     * Gera conteúdo personalizado do assistente pessoal com histórico e variação
+     */
+    public AssistentePersonalizado gerarConteudoAssistente(String tipoConsulta, String contextoUsuario, String contextoHistorico, double temperatura) {
         try {
             if (apiKey == null || apiKey.equals("your-api-key-here") || apiKey.isEmpty()) {
                 log.warn("API Key do OpenAI não configurada. Retornando conteúdo padrão.");
                 return gerarConteudoPadrao(tipoConsulta);
             }
 
-            String prompt = construirPromptAssistente(tipoConsulta, contextoUsuario);
-            String resposta = chamarGPT(prompt);
+            String prompt = construirPromptAssistente(tipoConsulta, contextoUsuario, contextoHistorico, temperatura);
+            String resposta = chamarGPT(prompt, temperatura);
             return parsearRespostaAssistente(resposta, tipoConsulta);
         } catch (Exception e) {
             log.error("Erro ao gerar conteúdo do assistente", e);
@@ -92,42 +140,77 @@ public class GPTService {
      * Constrói prompt personalizado baseado no tipo de consulta
      */
     private String construirPromptAssistente(String tipoConsulta, String contextoUsuario) {
+        return construirPromptAssistente(tipoConsulta, contextoUsuario, null, 0.7);
+    }
+
+    /**
+     * Constrói prompt personalizado baseado no tipo de consulta com histórico
+     */
+    private String construirPromptAssistente(String tipoConsulta, String contextoUsuario, String contextoHistorico, double temperatura) {
         StringBuilder prompt = new StringBuilder();
-        prompt.append("Você é um assistente pessoal de saúde mental e bem-estar profissional. ");
-        prompt.append("Seu objetivo é ajudar pessoas a melhorarem sua qualidade de vida no trabalho de TI. ");
-        prompt.append("Seja empático, prático e encorajador.\n\n");
+        prompt.append("Você é um assistente pessoal especializado em saúde mental e bem-estar no trabalho de TI. ");
+        prompt.append("Você tem formação em psicologia organizacional, neurociência aplicada e produtividade. ");
+        prompt.append("Seu estilo é como um mentor experiente: empático, prático, encorajador e profundamente conhecedor. ");
+        prompt.append("Você oferece insights baseados em ciência e experiência real.\n\n");
         
-        prompt.append("CONTEXTO DO USUÁRIO:\n");
+        prompt.append("CONTEXTO DO USUÁRIO (DADOS REAIS):\n");
         prompt.append(contextoUsuario);
         prompt.append("\n\n");
+        
+        // Adiciona contexto de histórico se disponível
+        if (contextoHistorico != null && !contextoHistorico.isEmpty()) {
+            prompt.append(contextoHistorico).append("\n\n");
+        }
 
         switch (tipoConsulta != null ? tipoConsulta.toLowerCase() : "motivacao") {
             case "curiosidade":
-                prompt.append("Gere uma CURIOSIDADE interessante e relevante sobre saúde mental, produtividade ou bem-estar no trabalho de TI. ");
-                prompt.append("A curiosidade deve ser educativa, surpreendente e útil. ");
-                prompt.append("Inclua uma reflexão sobre como isso pode ser aplicado na vida do usuário.\n\n");
+                prompt.append("Gere uma CURIOSIDADE CIENTÍFICA interessante e relevante sobre saúde mental, produtividade ou bem-estar no trabalho de TI. ");
+                prompt.append("A curiosidade deve:\n");
+                prompt.append("- Ser baseada em estudos científicos ou neurociência\n");
+                prompt.append("- Ser educativa, surpreendente e útil\n");
+                prompt.append("- Estar relacionada ao contexto do usuário (mencione os dados dele)\n");
+                prompt.append("- Incluir uma reflexão prática sobre como aplicar na vida real\n");
+                prompt.append("- Ser escrita de forma envolvente e acessível\n\n");
                 break;
                 
             case "prevencao":
-                prompt.append("Gere dicas de PREVENÇÃO de burnout e estresse baseadas no contexto do usuário. ");
-                prompt.append("Seja específico e prático. Inclua ações concretas que o usuário pode tomar HOJE.\n\n");
+                prompt.append("Gere dicas ESPECÍFICAS de PREVENÇÃO de burnout e estresse baseadas no contexto REAL do usuário. ");
+                prompt.append("As dicas devem:\n");
+                prompt.append("- Ser personalizadas para o perfil dele (use os dados fornecidos)\n");
+                prompt.append("- Ser práticas e acionáveis HOJE\n");
+                prompt.append("- Incluir ações concretas com passos claros\n");
+                prompt.append("- Mencionar sinais de alerta específicos para ele\n");
+                prompt.append("- Ser como conselhos de um especialista experiente\n\n");
                 break;
                 
             case "motivacao":
-                prompt.append("Gere uma MENSAGEM MOTIVACIONAL personalizada baseada no contexto do usuário. ");
-                prompt.append("Seja positivo, mas realista. Reconheça os desafios e ofereça encorajamento genuíno.\n\n");
+                prompt.append("Gere uma MENSAGEM MOTIVACIONAL PROFUNDA e personalizada baseada no contexto REAL do usuário. ");
+                prompt.append("A mensagem deve:\n");
+                prompt.append("- Reconhecer os desafios específicos dele (mencione os dados)\n");
+                prompt.append("- Ser positiva, mas realista e autêntica\n");
+                prompt.append("- Oferecer encorajamento genuíno, não clichês\n");
+                prompt.append("- Reconhecer pequenas vitórias e progressos\n");
+                prompt.append("- Ser como um mentor que acredita no potencial dele\n\n");
                 break;
                 
             case "dica_pratica":
-                prompt.append("Gere uma DICA PRÁTICA específica e acionável para melhorar o bem-estar. ");
-                prompt.append("A dica deve ser algo que o usuário pode implementar imediatamente. ");
-                prompt.append("Inclua passos claros de como aplicar.\n\n");
+                prompt.append("Gere uma DICA PRÁTICA ESPECÍFICA e acionável para melhorar o bem-estar, baseada no contexto do usuário. ");
+                prompt.append("A dica deve:\n");
+                prompt.append("- Ser algo que ele pode implementar IMEDIATAMENTE (hoje mesmo)\n");
+                prompt.append("- Estar relacionada aos dados dele (personalizada)\n");
+                prompt.append("- Incluir passos claros e específicos (não genéricos)\n");
+                prompt.append("- Ter base científica ou em técnicas comprovadas\n");
+                prompt.append("- Ser como uma receita prática de um especialista\n\n");
                 break;
                 
             case "reflexao":
-                prompt.append("Gere uma REFLEXÃO profunda e construtiva baseada no contexto do usuário. ");
-                prompt.append("Faça perguntas que ajudem o usuário a pensar sobre seus hábitos e escolhas. ");
-                prompt.append("Seja gentil e não julgador.\n\n");
+                prompt.append("Gere uma REFLEXÃO PROFUNDA e construtiva baseada no contexto do usuário. ");
+                prompt.append("A reflexão deve:\n");
+                prompt.append("- Fazer perguntas poderosas que ajudem autoconhecimento\n");
+                prompt.append("- Ser gentil, não julgadora e acolhedora\n");
+                prompt.append("- Estar relacionada aos padrões identificados nos dados dele\n");
+                prompt.append("- Ajudar o usuário a pensar sobre hábitos e escolhas\n");
+                prompt.append("- Ser como uma sessão de coaching pessoal\n\n");
                 break;
                 
             default:
@@ -246,31 +329,66 @@ public class GPTService {
     }
 
     /**
-     * Gera análise semanal usando GPT
+     * Gera análise semanal usando GPT com histórico e variação
      */
     public AnaliseGPT gerarAnaliseSemanal(String dadosHistoricos) {
+        return gerarAnaliseSemanal(dadosHistoricos, null, 0.7);
+    }
+
+    /**
+     * Gera análise semanal usando GPT com histórico e variação
+     */
+    public AnaliseGPT gerarAnaliseSemanal(String dadosHistoricos, String contextoHistorico, double temperatura) {
         try {
             if (apiKey == null || apiKey.equals("your-api-key-here") || apiKey.isEmpty()) {
                 log.warn("⚠️ API Key do OpenAI não configurada. Retornando análise padrão (FALLBACK - não usa IA real).");
                 return gerarAnalisePadrao(dadosHistoricos);
             }
 
-            String prompt = String.format(
-                "Você é um assistente pessoal especializado em saúde mental e produtividade no trabalho de TI. " +
-                "Analise os seguintes dados históricos de um usuário e gere uma análise completa e acionável:\n\n" +
-                "%s\n\n" +
-                "Seja um verdadeiro ajudante pessoal: seja empático, prático e ofereça insights valiosos. " +
-                "Responda APENAS em formato JSON válido com as seguintes chaves:\n" +
-                "- \"resumo\": resumo semanal em 2-3 frases, reconhecendo o contexto do usuário\n" +
-                "- \"risco\": nível de risco de burnout (\"baixo\", \"medio\" ou \"alto\")\n" +
-                "- \"sugestoes\": array com 3-5 sugestões práticas, específicas e acionáveis que o usuário pode implementar HOJE\n\n" +
-                "As sugestões devem ser como conselhos de um amigo experiente, não apenas recomendações genéricas.\n\n" +
-                "Exemplo de resposta:\n" +
-                "{\"resumo\": \"...\", \"risco\": \"medio\", \"sugestoes\": [\"...\", \"...\", \"...\"]}",
-                dadosHistoricos
-            );
+            StringBuilder promptBuilder = new StringBuilder();
+            promptBuilder.append("Você é um analista especializado em saúde mental e produtividade no trabalho de TI, ");
+            promptBuilder.append("com formação em psicologia organizacional e anos de experiência em prevenção de burnout. ");
+            promptBuilder.append("Você analisa dados com profundidade e oferece insights valiosos e acionáveis.\n\n");
+            
+            promptBuilder.append("DADOS HISTÓRICOS DO USUÁRIO (ÚLTIMOS 7 DIAS):\n");
+            promptBuilder.append(dadosHistoricos).append("\n\n");
+            
+            // Adiciona contexto de histórico se disponível
+            if (contextoHistorico != null && !contextoHistorico.isEmpty()) {
+                promptBuilder.append(contextoHistorico).append("\n\n");
+            }
+            
+            promptBuilder.append("INSTRUÇÕES PARA ANÁLISE:\n");
+            promptBuilder.append("1. Analise os padrões nos dados (tendências, variações, consistência)\n");
+            promptBuilder.append("2. Identifique sinais de alerta ou pontos positivos\n");
+            promptBuilder.append("3. Calcule o risco de burnout baseado em:\n");
+            promptBuilder.append("   - Média de humor e energia (se < 2.5 = alto risco)\n");
+            promptBuilder.append("   - Consistência dos registros (muitas faltas = alerta)\n");
+            promptBuilder.append("   - Produtividade vs bem-estar (desequilíbrio = risco)\n");
+            promptBuilder.append("   - Hábitos saudáveis (frequência e pontuação)\n");
+            promptBuilder.append("4. Gere sugestões ESPECÍFICAS e ACIONÁVEIS baseadas nos dados reais\n");
+            promptBuilder.append("5. Varie a abordagem: use diferentes ângulos, diferentes exemplos, diferentes estruturas\n\n");
+            
+            promptBuilder.append("FORMATO DE RESPOSTA (JSON):\n");
+            promptBuilder.append("{\n");
+            promptBuilder.append("  \"resumo\": \"Resumo em 2-3 frases que reconhece o contexto específico do usuário, menciona padrões identificados e oferece perspectiva empática. SEJA ÚNICO e DIFERENTE de análises anteriores.\",\n");
+            promptBuilder.append("  \"risco\": \"baixo\" ou \"medio\" ou \"alto\" (baseado em análise objetiva dos dados)\",\n");
+            promptBuilder.append("  \"sugestoes\": [\n");
+            promptBuilder.append("    \"Sugestão 1: Específica, acionável, baseada nos dados (ex: 'Com base na sua média de humor de 2.3, sugiro pausas de 10min a cada 2h'). SEJA CRIATIVO e DIFERENTE.\",\n");
+            promptBuilder.append("    \"Sugestão 2: Prática e implementável HOJE. Use abordagem diferente da anterior.\",\n");
+            promptBuilder.append("    \"Sugestão 3: Como um conselho de amigo experiente, não genérico. Varie o tom e estrutura.\"\n");
+            promptBuilder.append("  ]\n");
+            promptBuilder.append("}\n\n");
+            
+            promptBuilder.append("IMPORTANTE:\n");
+            promptBuilder.append("- Seja específico: mencione números e padrões dos dados\n");
+            promptBuilder.append("- Seja empático: reconheça os desafios do usuário\n");
+            promptBuilder.append("- Seja prático: sugestões que podem ser implementadas HOJE\n");
+            promptBuilder.append("- Seja como um mentor: ofereça insights valiosos, não apenas recomendações genéricas\n");
+            promptBuilder.append("- Seja ÚNICO: evite repetir estruturas, frases ou abordagens de análises anteriores\n");
+            promptBuilder.append("- Varie: use diferentes metáforas, exemplos, ou formas de apresentar as informações");
 
-            String resposta = chamarGPT(prompt);
+            String resposta = chamarGPT(promptBuilder.toString(), temperatura);
             return parsearRespostaAnalise(resposta);
         } catch (Exception e) {
             log.error("Erro ao gerar análise semanal com GPT", e);
@@ -280,19 +398,106 @@ public class GPTService {
 
     /**
      * Chama a API do OpenAI via HTTP
+     * Método público para permitir uso em outros serviços
      */
-    private String chamarGPT(String prompt) throws Exception {
-        String requestBody = String.format(
-            "{\n" +
-            "  \"model\": \"%s\",\n" +
-            "  \"messages\": [\n" +
-            "    {\"role\": \"user\", \"content\": \"%s\"}\n" +
-            "  ],\n" +
-            "  \"temperature\": %s,\n" +
-            "  \"max_tokens\": 500\n" +
-            "}",
-            model, prompt.replace("\"", "\\\""), temperature
-        );
+    public String chamarGPT(String prompt) throws Exception {
+        return chamarGPT(prompt, temperature);
+    }
+
+    /**
+     * Gera resposta de chat conversacional com histórico
+     */
+    public String gerarRespostaChat(String mensagemUsuario, String contextoHistorico, String contextoUsuario, double temperatura) {
+        try {
+            // Verifica se a API key é válida (não é o padrão e não está vazia)
+            if (apiKey == null || apiKey.isEmpty() || 
+                apiKey.equals("your-api-key-here") || 
+                apiKey.trim().isEmpty() ||
+                !apiKey.startsWith("sk-")) {
+                log.warn("⚠️ API Key do OpenAI não configurada ou inválida. API Key recebida: {}", 
+                        apiKey != null && apiKey.length() > 10 ? apiKey.substring(0, 10) + "..." : apiKey);
+                // Mensagem mais útil quando API key não está configurada
+                return "Olá! Para usar o chat com IA, é necessário configurar a API Key do Google Gemini ou do OpenAI. " +
+                       "Por favor, configure a variável de ambiente GEMINI_API_KEY ou OPENAI_API_KEY. " +
+                       "Enquanto isso, você pode usar os outros recursos do sistema como feedback, análise semanal e análise de ambiente.";
+            }
+            
+            log.debug("✅ API Key do OpenAI detectada. Iniciando chamada ao GPT...");
+
+            StringBuilder promptBuilder = new StringBuilder();
+            promptBuilder.append("Você é um assistente pessoal especializado em saúde mental e bem-estar no trabalho de TI. ");
+            promptBuilder.append("Você tem formação em psicologia organizacional, neurociência aplicada e produtividade. ");
+            promptBuilder.append("Seu estilo é como um mentor experiente: empático, prático, encorajador e profundamente conhecedor. ");
+            promptBuilder.append("Você oferece insights baseados em ciência e experiência real.\n\n");
+            
+            // Adiciona contexto do usuário
+            if (contextoUsuario != null && !contextoUsuario.isEmpty()) {
+                promptBuilder.append("CONTEXTO DO USUÁRIO:\n");
+                promptBuilder.append(contextoUsuario).append("\n\n");
+            }
+            
+            // Adiciona histórico da conversa
+            if (contextoHistorico != null && !contextoHistorico.isEmpty()) {
+                promptBuilder.append("HISTÓRICO DA CONVERSA:\n");
+                promptBuilder.append(contextoHistorico).append("\n\n");
+            }
+            
+            promptBuilder.append("INSTRUÇÕES:\n");
+            promptBuilder.append("1. Responda de forma natural e conversacional, como um amigo experiente\n");
+            promptBuilder.append("2. Mantenha o contexto da conversa anterior (se houver)\n");
+            promptBuilder.append("3. Seja empático, prático e acolhedor\n");
+            promptBuilder.append("4. Ofereça insights valiosos baseados em ciência e experiência\n");
+            promptBuilder.append("5. Se a pergunta for sobre saúde mental, produtividade ou bem-estar, seja específico e acionável\n");
+            promptBuilder.append("6. Se não souber algo, seja honesto e sugira alternativas\n");
+            promptBuilder.append("7. Mantenha respostas concisas mas completas (máximo 300 palavras)\n\n");
+            
+            promptBuilder.append("MENSAGEM DO USUÁRIO:\n");
+            promptBuilder.append(mensagemUsuario).append("\n\n");
+            
+            promptBuilder.append("Responda de forma natural e conversacional, mantendo o contexto da conversa.");
+
+            String promptCompleto = promptBuilder.toString();
+            return chamarGPT(promptCompleto, temperatura);
+        } catch (RuntimeException e) {
+            // Verifica se é um erro que deve tentar fallback (cota, créditos, rate limit, etc)
+            if (e.getMessage() != null && (e.getMessage().contains("cota") || 
+                    e.getMessage().contains("créditos") || 
+                    e.getMessage().contains("quota") ||
+                    e.getMessage().contains("excedeu") ||
+                    e.getMessage().contains("API Key") ||
+                    e.getMessage().contains("rate_limit") ||
+                    e.getMessage().contains("429"))) {
+                log.error("❌ Erro na API OpenAI: {}", e.getMessage());
+                return e.getMessage();
+            }
+            log.error("❌ Erro ao gerar resposta de chat: {}", e.getMessage(), e);
+            return "Desculpe, ocorreu um erro ao processar sua mensagem. Por favor, tente novamente. Erro: " + e.getMessage();
+        } catch (Exception e) {
+            log.error("❌ Erro ao gerar resposta de chat: {}", e.getMessage(), e);
+            return "Desculpe, ocorreu um erro ao processar sua mensagem. Por favor, tente novamente.";
+        }
+    }
+
+    /**
+     * Chama a API do OpenAI via HTTP com temperatura customizada
+     */
+    public String chamarGPT(String prompt, double temperaturaCustomizada) throws Exception {
+        // Usa ObjectMapper para construir JSON corretamente (escapa caracteres especiais)
+        java.util.Map<String, Object> requestMap = new java.util.HashMap<>();
+        requestMap.put("model", model);
+        
+        java.util.Map<String, String> message = new java.util.HashMap<>();
+        message.put("role", "user");
+        message.put("content", prompt);
+        
+        requestMap.put("messages", java.util.List.of(message));
+        requestMap.put("temperature", temperaturaCustomizada);
+        requestMap.put("max_tokens", 500);
+        
+        String requestBody = objectMapper.writeValueAsString(requestMap);
+        
+        log.debug("📤 Enviando requisição para OpenAI. Tamanho do prompt: {} caracteres", prompt.length());
+        log.debug("📤 Request body (primeiros 200 chars): {}", requestBody.length() > 200 ? requestBody.substring(0, 200) + "..." : requestBody);
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create("https://api.openai.com/v1/chat/completions"))
@@ -303,6 +508,8 @@ public class GPTService {
                 .build();
 
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        
+        log.debug("📥 Resposta recebida: Status {}, Tamanho: {} caracteres", response.statusCode(), response.body().length());
 
         if (response.statusCode() == 200) {
             JsonNode jsonResponse = objectMapper.readTree(response.body());
@@ -310,8 +517,46 @@ public class GPTService {
             log.info("✅ IA REAL: Resposta recebida do GPT (OpenAI). Tamanho: {} caracteres", respostaGPT.length());
             return respostaGPT;
         } else {
+            // Tenta parsear o erro da API para mensagem mais útil
+            String errorMessage = "Erro desconhecido";
+            try {
+                JsonNode errorJson = objectMapper.readTree(response.body());
+                if (errorJson.has("error")) {
+                    JsonNode error = errorJson.get("error");
+                    if (error.has("message")) {
+                        errorMessage = error.get("message").asText();
+                    }
+                    if (error.has("code")) {
+                        String errorCode = error.get("code").asText();
+                        log.error("❌ Erro na API OpenAI: Status {} - Code: {} - Message: {}", 
+                                response.statusCode(), errorCode, errorMessage);
+                        
+                        // Mensagens específicas para erros comuns
+                        if ("insufficient_quota".equals(errorCode) || response.statusCode() == 429) {
+                            throw new RuntimeException("A API Key do OpenAI excedeu a cota ou não tem créditos disponíveis. " +
+                                    "Por favor, verifique sua conta OpenAI em https://platform.openai.com/account/billing");
+                        } else if ("invalid_api_key".equals(errorCode) || response.statusCode() == 401) {
+                            throw new RuntimeException("API Key do OpenAI inválida. Verifique se a chave está correta.");
+                        } else if ("rate_limit_exceeded".equals(errorCode)) {
+                            throw new RuntimeException("Limite de requisições excedido. Aguarde alguns instantes e tente novamente.");
+                        }
+                    }
+                }
+            } catch (RuntimeException e) {
+                // Se já foi lançada uma exceção com mensagem específica, relança
+                throw e;
+            } catch (Exception e) {
+                // Outros erros de parsing, continua para lançar erro genérico
+            }
+            
             log.error("❌ Erro na API OpenAI: Status {} - {}", response.statusCode(), response.body());
-            throw new RuntimeException("Erro ao chamar API OpenAI: " + response.statusCode());
+            // Se for erro 429 (quota excedida), lança exceção específica para tentar fallback
+            if (response.statusCode() == 429 || errorMessage.toLowerCase().contains("quota") || 
+                errorMessage.toLowerCase().contains("exceeded")) {
+                throw new RuntimeException("A API Key do OpenAI excedeu a cota ou não tem créditos disponíveis. " +
+                        "Por favor, verifique sua conta OpenAI em https://platform.openai.com/account/billing");
+            }
+            throw new RuntimeException("Erro ao chamar API OpenAI: " + response.statusCode() + " - " + errorMessage);
         }
     }
 
@@ -339,6 +584,8 @@ public class GPTService {
                     .build();
         }
     }
+
+    // Métodos de fallback do Gemini removidos temporariamente
 
     /**
      * Fallback: gera feedback padrão quando GPT não está disponível
