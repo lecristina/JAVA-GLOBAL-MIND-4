@@ -48,7 +48,7 @@ public class GPTService {
     public String gerarFeedbackEmpatico(Integer humor, String produtividade) {
         try {
             if (apiKey == null || apiKey.equals("your-api-key-here") || apiKey.isEmpty()) {
-                log.warn("API Key do OpenAI não configurada. Retornando feedback padrão.");
+                log.warn("⚠️ API Key do OpenAI não configurada. Retornando feedback padrão (FALLBACK - não usa IA real).");
                 return gerarFeedbackPadrao(humor, produtividade);
             }
 
@@ -251,7 +251,7 @@ public class GPTService {
     public AnaliseGPT gerarAnaliseSemanal(String dadosHistoricos) {
         try {
             if (apiKey == null || apiKey.equals("your-api-key-here") || apiKey.isEmpty()) {
-                log.warn("API Key do OpenAI não configurada. Retornando análise padrão.");
+                log.warn("⚠️ API Key do OpenAI não configurada. Retornando análise padrão (FALLBACK - não usa IA real).");
                 return gerarAnalisePadrao(dadosHistoricos);
             }
 
@@ -304,13 +304,15 @@ public class GPTService {
 
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
-        if (response.statusCode() != 200) {
-            log.error("Erro na API OpenAI: Status {} - {}", response.statusCode(), response.body());
+        if (response.statusCode() == 200) {
+            JsonNode jsonResponse = objectMapper.readTree(response.body());
+            String respostaGPT = jsonResponse.get("choices").get(0).get("message").get("content").asText().trim();
+            log.info("✅ IA REAL: Resposta recebida do GPT (OpenAI). Tamanho: {} caracteres", respostaGPT.length());
+            return respostaGPT;
+        } else {
+            log.error("❌ Erro na API OpenAI: Status {} - {}", response.statusCode(), response.body());
             throw new RuntimeException("Erro ao chamar API OpenAI: " + response.statusCode());
         }
-
-        JsonNode jsonResponse = objectMapper.readTree(response.body());
-        return jsonResponse.get("choices").get(0).get("message").get("content").asText().trim();
     }
 
     /**

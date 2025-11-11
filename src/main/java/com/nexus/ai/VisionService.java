@@ -71,11 +71,13 @@ public class VisionService {
 
     /**
      * Chama a API Hugging Face para análise de imagem
+     * A API aceita imagem diretamente em bytes (application/octet-stream)
      */
     private JsonNode chamarHuggingFaceAPI(String base64Image) throws Exception {
-        // Hugging Face aceita imagem em base64 diretamente
-        // Formato: bytes da imagem em base64
+        // Decodificar base64 para bytes da imagem
         byte[] imageBytes = Base64.getDecoder().decode(base64Image);
+        
+        log.info("Enviando imagem para Hugging Face API: {} bytes", imageBytes.length);
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(huggingFaceApiUrl))
@@ -85,15 +87,21 @@ public class VisionService {
                 .build();
 
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        
+        log.info("Resposta Hugging Face: Status {} - Body: {}", response.statusCode(), 
+                response.body().length() > 200 ? response.body().substring(0, 200) + "..." : response.body());
 
         if (response.statusCode() == 200 || response.statusCode() == 201) {
-            return objectMapper.readTree(response.body());
+            JsonNode resultado = objectMapper.readTree(response.body());
+            log.info("✅ IA REAL: Análise recebida do modelo de Deep Learning. Resultado: {}", resultado);
+            return resultado;
         } else if (response.statusCode() == 503) {
             // Modelo ainda carregando - usar fallback
-            log.warn("Modelo Hugging Face ainda carregando (503). Usando análise heurística.");
+            log.warn("⚠️ Modelo Hugging Face ainda carregando (503). Usando análise heurística como fallback.");
             return null;
         } else {
-            log.warn("Erro na API Hugging Face: Status {} - {}", response.statusCode(), response.body());
+            log.warn("❌ Erro na API Hugging Face: Status {} - {}. Usando fallback.", 
+                    response.statusCode(), response.body());
             // Se a API retornar erro, usar análise baseada em heurísticas
             return null;
         }
@@ -110,8 +118,10 @@ public class VisionService {
         String iluminacao = "adequada";
         StringBuilder resumo = new StringBuilder();
 
-        if (resultado != null && resultado.isArray()) {
-            // Processar resultados da classificação
+        if (resultado != null && resultado.isArray() && resultado.size() > 0) {
+            // ✅ IA REAL: Processar resultados reais do modelo de Deep Learning
+            log.info("✅ Processando resultados REAIS do modelo de IA ({} itens detectados)", resultado.size());
+            
             for (JsonNode item : resultado) {
                 if (item.has("label")) {
                     String label = item.get("label").asText().toLowerCase();
@@ -119,28 +129,34 @@ public class VisionService {
                     
                     objetosDetectados.add(String.format("%s (%.2f%%)", label, score * 100));
                     
-                    // Interpretar labels para análise de ambiente
-                    if (label.contains("desk") || label.contains("office") || label.contains("computer")) {
+                    // Interpretar labels para análise de ambiente baseado em resultados REAIS da IA
+                    if (label.contains("desk") || label.contains("office") || label.contains("computer") || 
+                        label.contains("monitor") || label.contains("keyboard")) {
                         nivelFoco = "alto";
                         organizacao = "boa";
-                    } else if (label.contains("clutter") || label.contains("mess")) {
+                    } else if (label.contains("clutter") || label.contains("mess") || 
+                               label.contains("disorder") || label.contains("chaos")) {
                         organizacao = "regular";
+                        nivelFoco = "baixo";
                         sugestoes.add("Considere organizar melhor o espaço de trabalho");
-                    } else if (label.contains("window") || label.contains("light")) {
+                    } else if (label.contains("window") || label.contains("light") || 
+                               label.contains("sunlight") || label.contains("bright")) {
                         iluminacao = "excelente";
+                    } else if (label.contains("dark") || label.contains("shadow")) {
+                        iluminacao = "insuficiente";
                     }
                 }
             }
             
-            resumo.append("Análise realizada com modelo de Deep Learning. ");
-            resumo.append(String.format("Detectados %d elementos no ambiente. ", objetosDetectados.size()));
+            resumo.append("✅ Análise realizada com modelo de Deep Learning (IA REAL). ");
+            resumo.append(String.format("Detectados %d elementos no ambiente usando visão computacional. ", objetosDetectados.size()));
         } else {
-            // Fallback: análise baseada em heurísticas
-            log.info("Usando análise heurística (API não retornou resultados válidos)");
-            objetosDetectados.add("monitor");
-            objetosDetectados.add("teclado");
-            objetosDetectados.add("mesa");
-            resumo.append("Análise baseada em padrões comuns de ambiente de trabalho. ");
+            // ⚠️ FALLBACK: análise baseada em heurísticas (quando IA não disponível)
+            log.warn("⚠️ FALLBACK: Usando análise heurística (API não retornou resultados válidos ou modelo não disponível)");
+            objetosDetectados.add("monitor (estimado)");
+            objetosDetectados.add("teclado (estimado)");
+            objetosDetectados.add("mesa (estimado)");
+            resumo.append("⚠️ Análise baseada em padrões comuns (fallback - IA não disponível). ");
         }
 
         // Gerar sugestões baseadas na análise

@@ -15,7 +15,6 @@ import java.time.LocalDate;
 import java.util.List;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class AIService {
 
@@ -23,8 +22,21 @@ public class AIService {
     private final HabitoRepository habitoRepository;
     private final SprintRepository sprintRepository;
     
-    @Autowired(required = false)
     private GPTService gptService;
+
+    public AIService(
+            HumorRepository humorRepository,
+            HabitoRepository habitoRepository,
+            SprintRepository sprintRepository) {
+        this.humorRepository = humorRepository;
+        this.habitoRepository = habitoRepository;
+        this.sprintRepository = sprintRepository;
+    }
+
+    @Autowired(required = false)
+    public void setGptService(GPTService gptService) {
+        this.gptService = gptService;
+    }
 
     /**
      * Gera feedback empático usando GPT com base em humor e produtividade

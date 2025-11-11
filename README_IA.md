@@ -300,9 +300,56 @@ const analiseResponse = await fetch('http://localhost:8080/ia/analise', {
 
 ## 👁️ Deep Learning - Visão Computacional (IMPLEMENTADO)
 
-### Preparação para Análise de Ambiente de Trabalho
+### Análise de Ambiente de Trabalho com Deep Learning
 
-O módulo está preparado para integração futura com modelos de visão computacional (ex: MobileNet) para análise de foco e ambiente de trabalho.
+O módulo implementa análise de ambiente de trabalho usando modelos de Deep Learning via **Hugging Face Inference API**. O modelo `google/vit-base-patch16-224` (Vision Transformer) é usado para classificação de imagens e análise de cenas.
+
+### Endpoint: `POST /ia/analise-ambiente`
+
+**Funcionalidade:**
+- Recebe uma foto do ambiente de trabalho
+- Processa a imagem usando modelo de Deep Learning
+- Detecta objetos e classifica o ambiente
+- Analisa nível de foco, organização e iluminação
+- Gera sugestões práticas para melhorar o ambiente
+- Salva a análise no banco de dados Oracle
+
+**Request (multipart/form-data):**
+```
+POST /ia/analise-ambiente
+Content-Type: multipart/form-data
+Authorization: Bearer {token}
+
+foto: [arquivo de imagem]
+usuarioId: 1
+```
+
+**Response:**
+```json
+{
+  "nivelFoco": "alto",
+  "organizacao": "boa",
+  "iluminacao": "excelente",
+  "objetosDetectados": [
+    "desk (95.23%)",
+    "computer (87.45%)",
+    "monitor (82.10%)"
+  ],
+  "sugestoes": [
+    "Mantenha o ambiente organizado para melhorar a produtividade",
+    "Faça pausas regulares para descansar os olhos"
+  ],
+  "resumoAnalise": "Análise realizada com modelo de Deep Learning. Detectados 3 elementos no ambiente. Nível de foco: alto. Organização: boa. Iluminação: excelente.",
+  "timestamp": "2025-11-11T15:30:00",
+  "idAlerta": 123
+}
+```
+
+**Tecnologias:**
+- **Modelo**: Google ViT-Base (Vision Transformer)
+- **API**: Hugging Face Inference API (gratuita)
+- **Processamento**: Classificação de imagens e detecção de objetos
+- **Integração**: Salva resultados em `t_mt_alertas_ia` com tipo `ANALISE_AMBIENTE`
 
 #### Estrutura Preparada:
 
