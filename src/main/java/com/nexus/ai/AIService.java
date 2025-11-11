@@ -8,6 +8,7 @@ import com.nexus.infrastructure.repository.HabitoRepository;
 import com.nexus.infrastructure.repository.SprintRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -21,13 +22,30 @@ public class AIService {
     private final HumorRepository humorRepository;
     private final HabitoRepository habitoRepository;
     private final SprintRepository sprintRepository;
-    private final GPTService gptService;
+    
+    @Autowired(required = false)
+    private GPTService gptService;
 
     /**
      * Gera feedback empático usando GPT com base em humor e produtividade
      */
     public String gerarFeedbackEmpatico(Integer humor, String produtividade) {
-        return gptService.gerarFeedbackEmpatico(humor, produtividade);
+        if (gptService != null) {
+            return gptService.gerarFeedbackEmpatico(humor, produtividade);
+        }
+        // Fallback se GPTService não estiver disponível
+        return gerarFeedbackPadrao(humor, produtividade);
+    }
+    
+    private String gerarFeedbackPadrao(Integer humor, String produtividade) {
+        if (humor == null) humor = 3;
+        if (humor <= 2) {
+            return "Você parece cansado hoje. Tente fazer uma pausa curta e respirar fundo. Estamos aqui para apoiá-lo.";
+        } else if (humor <= 3) {
+            return "Continue cuidando de si mesmo. Lembre-se de manter o equilíbrio entre trabalho e descanso.";
+        } else {
+            return "Ótimo trabalho! Continue mantendo esse equilíbrio e foco.";
+        }
     }
 
     /**
@@ -39,7 +57,7 @@ public class AIService {
                     idUsuario, LocalDate.now().minusDays(7), LocalDate.now());
             
             if (ultimosHumor.isEmpty()) {
-                return gptService.gerarFeedbackEmpatico(3, "media");
+                return gerarFeedbackEmpatico(3, "media");
             }
             
             // Pega o humor mais recente
@@ -49,7 +67,7 @@ public class AIService {
             // Calcula produtividade baseada em sprints recentes
             String produtividade = calcularProdutividadeTexto(idUsuario);
             
-            return gptService.gerarFeedbackEmpatico(humor, produtividade);
+            return gerarFeedbackEmpatico(humor, produtividade);
         } catch (Exception e) {
             log.error("Erro ao gerar mensagem empática", e);
             return "Estamos aqui para apoiá-lo. Lembre-se de cuidar de si mesmo.";
@@ -171,15 +189,50 @@ public class AIService {
                 dadosHistoricos.append(String.format("- Total de sprints: %d\n", sprints.size()));
             }
 
-            return gptService.gerarAnaliseSemanal(dadosHistoricos.toString());
+            if (gptService != null) {
+                return gptService.gerarAnaliseSemanal(dadosHistoricos.toString());
+            } else {
+                // Fallback se GPTService não estiver disponível
+                return criarAnalisePadrao(ultimosHumor, habitos, sprints);
+            }
         } catch (Exception e) {
             log.error("Erro ao gerar análise semanal", e);
-            return GPTService.AnaliseGPT.builder()
-                    .resumo("Análise não disponível no momento.")
-                    .risco("medio")
-                    .sugestoes(List.of("Monitore seus indicadores", "Mantenha hábitos saudáveis", "Faça pausas regulares"))
-                    .build();
+            return criarAnalisePadrao(null, null, null);
         }
+    }
+    
+    private GPTService.AnaliseGPT criarAnalisePadrao(List<Humor> ultimosHumor, List<Habito> habitos, List<Sprint> sprints) {
+        String resumo = "Análise baseada em dados históricos. Recomendamos monitoramento contínuo do bem-estar.";
+        String risco = "medio";
+        
+        if (ultimosHumor != null && !ultimosHumor.isEmpty()) {
+            double mediaHumor = ultimosHumor.stream()
+                    .mapToInt(Humor::getNivelHumor)
+                    .average()
+                    .orElse(3.0);
+            double mediaEnergia = ultimosHumor.stream()
+                    .mapToInt(Humor::getNivelEnergia)
+                    .average()
+                    .orElse(3.0);
+            
+            double score = (mediaHumor + mediaEnergia) / 2;
+            if (score <= 2) {
+                risco = "alto";
+                resumo = "Detectamos sinais de possível estresse. Recomendamos buscar apoio e fazer pausas regulares.";
+            } else if (score <= 3) {
+                risco = "medio";
+                resumo = "Alguns sinais de estresse foram detectados. Mantenha hábitos saudáveis.";
+            } else {
+                risco = "baixo";
+                resumo = "Seus indicadores estão positivos. Continue mantendo hábitos saudáveis.";
+            }
+        }
+        
+        return GPTService.AnaliseGPT.builder()
+                .resumo(resumo)
+                .risco(risco)
+                .sugestoes(List.of("Mantenha hábitos saudáveis", "Faça pausas regulares", "Monitore seus indicadores"))
+                .build();
     }
 
     /**

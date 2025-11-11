@@ -25,20 +25,21 @@ public class GPTService {
     private final HttpClient httpClient;
     private final ObjectMapper objectMapper;
     
-    @Value("${spring.ai.openai.api-key:your-api-key-here}")
     private String apiKey;
-    
-    @Value("${spring.ai.openai.chat.options.model:gpt-3.5-turbo}")
     private String model;
-    
-    @Value("${spring.ai.openai.chat.options.temperature:0.7}")
     private Double temperature;
 
-    public GPTService() {
+    public GPTService(
+            @Value("${spring.ai.openai.api-key:your-api-key-here}") String apiKey,
+            @Value("${spring.ai.openai.chat.options.model:gpt-3.5-turbo}") String model,
+            @Value("${spring.ai.openai.chat.options.temperature:0.7}") Double temperature) {
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(30))
                 .build();
         this.objectMapper = new ObjectMapper();
+        this.apiKey = apiKey;
+        this.model = model;
+        this.temperature = temperature;
     }
 
     /**
