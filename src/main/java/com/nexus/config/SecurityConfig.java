@@ -46,6 +46,7 @@ public class SecurityConfig {
                                 "/configuration/**",
                                 "/error"
                         ).permitAll()
+                        .requestMatchers("/ia/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

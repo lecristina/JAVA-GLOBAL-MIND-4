@@ -21,34 +21,64 @@ public class AIService {
     private final HumorRepository humorRepository;
     private final HabitoRepository habitoRepository;
     private final SprintRepository sprintRepository;
+    private final GPTService gptService;
 
+    /**
+     * Gera feedback empático usando GPT com base em humor e produtividade
+     */
+    public String gerarFeedbackEmpatico(Integer humor, String produtividade) {
+        return gptService.gerarFeedbackEmpatico(humor, produtividade);
+    }
+
+    /**
+     * Gera mensagem empática baseada nos últimos registros do usuário
+     */
     public String gerarMensagemEmpatica(Integer idUsuario) {
         try {
             List<Humor> ultimosHumor = humorRepository.findByUsuario_IdUsuarioAndDataRegistroBetween(
                     idUsuario, LocalDate.now().minusDays(7), LocalDate.now());
             
-            // TODO: Implementar com Spring AI quando disponível
-            // Por enquanto retorna mensagem baseada no contexto
             if (ultimosHumor.isEmpty()) {
-                return "Estamos aqui para apoiá-lo. Lembre-se de cuidar de si mesmo.";
+                return gptService.gerarFeedbackEmpatico(3, "media");
             }
             
-            // Análise simples baseada nos dados
-            double mediaHumor = ultimosHumor.stream()
-                    .mapToInt(Humor::getNivelHumor)
-                    .average()
-                    .orElse(3.0);
+            // Pega o humor mais recente
+            Humor ultimoHumor = ultimosHumor.get(ultimosHumor.size() - 1);
+            Integer humor = ultimoHumor.getNivelHumor();
             
-            if (mediaHumor <= 2) {
-                return "Notamos que você está passando por um momento difícil. Lembre-se de que é importante cuidar de si mesmo. Considere fazer uma pausa e buscar apoio se necessário.";
-            } else if (mediaHumor <= 3) {
-                return "Estamos aqui para apoiá-lo. Lembre-se de cuidar de si mesmo e buscar equilíbrio entre trabalho e descanso.";
-            } else {
-                return "Continue mantendo esse equilíbrio! Você está no caminho certo.";
-            }
+            // Calcula produtividade baseada em sprints recentes
+            String produtividade = calcularProdutividadeTexto(idUsuario);
+            
+            return gptService.gerarFeedbackEmpatico(humor, produtividade);
         } catch (Exception e) {
             log.error("Erro ao gerar mensagem empática", e);
             return "Estamos aqui para apoiá-lo. Lembre-se de cuidar de si mesmo.";
+        }
+    }
+
+    /**
+     * Calcula texto de produtividade baseado em sprints
+     */
+    private String calcularProdutividadeTexto(Integer idUsuario) {
+        try {
+            List<Sprint> sprints = sprintRepository.findByUsuario_IdUsuario(idUsuario, 
+                    org.springframework.data.domain.Pageable.unpaged()).getContent();
+            
+            if (sprints.isEmpty()) {
+                return "media";
+            }
+            
+            double mediaProdutividade = sprints.stream()
+                    .filter(s -> s.getProdutividade() != null)
+                    .mapToDouble(s -> s.getProdutividade().doubleValue())
+                    .average()
+                    .orElse(0.0);
+            
+            if (mediaProdutividade > 50) return "alta";
+            if (mediaProdutividade > 30) return "media";
+            return "baixa";
+        } catch (Exception e) {
+            return "media";
         }
     }
 
@@ -82,44 +112,83 @@ public class AIService {
         }
     }
 
-    public String analisarRiscoBurnout(Integer idUsuario) {
+    /**
+     * Gera análise semanal completa usando GPT
+     */
+    public GPTService.AnaliseGPT gerarAnaliseSemanal(Integer idUsuario) {
         try {
+            // Busca dados históricos
             List<Humor> ultimosHumor = humorRepository.findByUsuario_IdUsuarioAndDataRegistroBetween(
-                    idUsuario, LocalDate.now().minusDays(14), LocalDate.now());
+                    idUsuario, LocalDate.now().minusDays(7), LocalDate.now());
             
             List<Habito> habitos = habitoRepository.findByUsuario_IdUsuarioAndDataHabitoBetween(
-                    idUsuario, LocalDate.now().minusDays(14), LocalDate.now());
+                    idUsuario, LocalDate.now().minusDays(7), LocalDate.now());
+            
+            List<Sprint> sprints = sprintRepository.findByUsuario_IdUsuario(idUsuario, 
+                    org.springframework.data.domain.Pageable.unpaged()).getContent();
 
-            // TODO: Implementar com Spring AI quando disponível
-            // Análise simples baseada nos dados
+            // Monta string com dados históricos
+            StringBuilder dadosHistoricos = new StringBuilder();
+            dadosHistoricos.append("DADOS DOS ÚLTIMOS 7 DIAS:\n\n");
+            
+            dadosHistoricos.append("HUMOR E ENERGIA:\n");
             if (ultimosHumor.isEmpty()) {
-                return "Risco: Baixo. Recomendamos monitorar seus níveis de humor e energia regularmente.";
-            }
-            
-            double mediaHumor = ultimosHumor.stream()
-                    .mapToInt(Humor::getNivelHumor)
-                    .average()
-                    .orElse(3.0);
-            
-            double mediaEnergia = ultimosHumor.stream()
-                    .mapToInt(Humor::getNivelEnergia)
-                    .average()
-                    .orElse(3.0);
-            
-            int totalHabitos = habitos.size();
-            
-            double score = (mediaHumor + mediaEnergia) / 2;
-            
-            if (score <= 2 || totalHabitos < 3) {
-                return "Risco: ALTO. Detectamos sinais de possível burnout. Recomendamos fortemente buscar apoio profissional e fazer pausas regulares.";
-            } else if (score <= 3) {
-                return "Risco: MÉDIO. Alguns sinais de estresse foram detectados. Recomendamos monitorar seus níveis de humor e energia, e manter hábitos saudáveis.";
+                dadosHistoricos.append("- Nenhum registro de humor nos últimos 7 dias\n");
             } else {
-                return "Risco: BAIXO. Seus indicadores estão positivos. Continue mantendo hábitos saudáveis e monitoramento regular.";
+                double mediaHumor = ultimosHumor.stream()
+                        .mapToInt(Humor::getNivelHumor)
+                        .average()
+                        .orElse(3.0);
+                double mediaEnergia = ultimosHumor.stream()
+                        .mapToInt(Humor::getNivelEnergia)
+                        .average()
+                        .orElse(3.0);
+                dadosHistoricos.append(String.format("- Média de humor: %.1f/5\n", mediaHumor));
+                dadosHistoricos.append(String.format("- Média de energia: %.1f/5\n", mediaEnergia));
+                dadosHistoricos.append(String.format("- Total de registros: %d\n", ultimosHumor.size()));
             }
+            
+            dadosHistoricos.append("\nHÁBITOS SAUDÁVEIS:\n");
+            dadosHistoricos.append(String.format("- Total de hábitos registrados: %d\n", habitos.size()));
+            if (!habitos.isEmpty()) {
+                int pontuacaoTotal = habitos.stream()
+                        .filter(h -> h.getPontuacao() != null)
+                        .mapToInt(Habito::getPontuacao)
+                        .sum();
+                dadosHistoricos.append(String.format("- Pontuação total: %d\n", pontuacaoTotal));
+            }
+            
+            dadosHistoricos.append("\nPRODUTIVIDADE (SPRINTS):\n");
+            if (sprints.isEmpty()) {
+                dadosHistoricos.append("- Nenhuma sprint registrada\n");
+            } else {
+                double mediaProdutividade = sprints.stream()
+                        .filter(s -> s.getProdutividade() != null)
+                        .mapToDouble(s -> s.getProdutividade().doubleValue())
+                        .average()
+                        .orElse(0.0);
+                dadosHistoricos.append(String.format("- Média de produtividade: %.2f\n", mediaProdutividade));
+                dadosHistoricos.append(String.format("- Total de sprints: %d\n", sprints.size()));
+            }
+
+            return gptService.gerarAnaliseSemanal(dadosHistoricos.toString());
         } catch (Exception e) {
-            log.error("Erro ao analisar risco de burnout", e);
-            return "Análise de risco não disponível no momento. Recomendamos monitorar seus níveis de humor e energia regularmente.";
+            log.error("Erro ao gerar análise semanal", e);
+            return GPTService.AnaliseGPT.builder()
+                    .resumo("Análise não disponível no momento.")
+                    .risco("medio")
+                    .sugestoes(List.of("Monitore seus indicadores", "Mantenha hábitos saudáveis", "Faça pausas regulares"))
+                    .build();
         }
+    }
+
+    /**
+     * Analisa risco de burnout (método legado mantido para compatibilidade)
+     */
+    public String analisarRiscoBurnout(Integer idUsuario) {
+        GPTService.AnaliseGPT analise = gerarAnaliseSemanal(idUsuario);
+        return String.format("Risco: %s. %s", 
+                analise.getRisco().toUpperCase(), 
+                analise.getResumo());
     }
 }

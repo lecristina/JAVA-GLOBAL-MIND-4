@@ -1,0 +1,51 @@
+package com.nexus.modules.ia.controller;
+
+import com.nexus.application.dto.AnaliseRequestDTO;
+import com.nexus.application.dto.AnaliseResponseDTO;
+import com.nexus.application.dto.FeedbackRequestDTO;
+import com.nexus.application.dto.FeedbackResponseDTO;
+import com.nexus.modules.ia.service.IAService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/ia")
+@RequiredArgsConstructor
+@Tag(name = "IA Generativa", description = "Endpoints de IA para feedback empático e análises inteligentes")
+@SecurityRequirement(name = "bearerAuth")
+public class IAController {
+
+    private final IAService iaService;
+
+    @PostMapping("/feedback")
+    @Operation(
+        summary = "Gerar feedback empático usando GPT",
+        description = "Gera uma mensagem empática personalizada baseada no humor e produtividade do usuário usando GPT. " +
+                     "O feedback é armazenado na tabela t_mt_alertas_ia."
+    )
+    @PreAuthorize("hasAnyRole('PROFISSIONAL', 'GESTOR')")
+    public ResponseEntity<FeedbackResponseDTO> gerarFeedback(@Valid @RequestBody FeedbackRequestDTO request) {
+        FeedbackResponseDTO response = iaService.gerarFeedback(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @PostMapping("/analise")
+    @Operation(
+        summary = "Gerar análise semanal inteligente usando GPT",
+        description = "Analisa dados históricos do usuário (últimos 7 dias) e gera um relatório completo " +
+                     "com resumo semanal, risco de burnout e sugestões personalizadas usando GPT."
+    )
+    @PreAuthorize("hasAnyRole('PROFISSIONAL', 'GESTOR')")
+    public ResponseEntity<AnaliseResponseDTO> gerarAnalise(@Valid @RequestBody AnaliseRequestDTO request) {
+        AnaliseResponseDTO response = iaService.gerarAnalise(request);
+        return ResponseEntity.ok(response);
+    }
+}
+
