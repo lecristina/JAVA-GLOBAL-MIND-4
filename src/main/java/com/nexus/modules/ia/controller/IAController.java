@@ -2,6 +2,8 @@ package com.nexus.modules.ia.controller;
 
 import com.nexus.application.dto.AnaliseRequestDTO;
 import com.nexus.application.dto.AnaliseResponseDTO;
+import com.nexus.application.dto.AssistenteRequestDTO;
+import com.nexus.application.dto.AssistenteResponseDTO;
 import com.nexus.application.dto.FeedbackRequestDTO;
 import com.nexus.application.dto.FeedbackResponseDTO;
 import com.nexus.modules.ia.service.IAService;
@@ -45,6 +47,19 @@ public class IAController {
     @PreAuthorize("hasAnyRole('PROFISSIONAL', 'GESTOR')")
     public ResponseEntity<AnaliseResponseDTO> gerarAnalise(@Valid @RequestBody AnaliseRequestDTO request) {
         AnaliseResponseDTO response = iaService.gerarAnalise(request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/assistente")
+    @Operation(
+        summary = "Assistente pessoal de saúde mental - Conteúdo personalizado",
+        description = "Gera conteúdo personalizado do assistente pessoal baseado no tipo de consulta. " +
+                     "Tipos disponíveis: 'curiosidade', 'prevencao', 'motivacao', 'dica_pratica', 'reflexao'. " +
+                     "Retorna título, conteúdo, ações práticas e reflexão para aplicar na vida real."
+    )
+    @PreAuthorize("hasAnyRole('PROFISSIONAL', 'GESTOR')")
+    public ResponseEntity<AssistenteResponseDTO> gerarConteudoAssistente(@Valid @RequestBody AssistenteRequestDTO request) {
+        AssistenteResponseDTO response = iaService.gerarConteudoAssistente(request);
         return ResponseEntity.ok(response);
     }
 }

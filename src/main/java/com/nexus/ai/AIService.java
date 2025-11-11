@@ -244,4 +244,72 @@ public class AIService {
                 analise.getRisco().toUpperCase(), 
                 analise.getResumo());
     }
+
+    /**
+     * Gera conteúdo do assistente pessoal baseado no tipo de consulta
+     */
+    public GPTService.AssistentePersonalizado gerarConteudoAssistente(Integer idUsuario, String tipoConsulta) {
+        try {
+            // Coleta contexto do usuário
+            StringBuilder contexto = new StringBuilder();
+            contexto.append("PERFIL DO USUÁRIO:\n");
+            
+            // Busca dados recentes
+            List<Humor> ultimosHumor = humorRepository.findByUsuario_IdUsuarioAndDataRegistroBetween(
+                    idUsuario, LocalDate.now().minusDays(7), LocalDate.now());
+            
+            List<Habito> habitos = habitoRepository.findByUsuario_IdUsuarioAndDataHabitoBetween(
+                    idUsuario, LocalDate.now().minusDays(7), LocalDate.now());
+            
+            List<Sprint> sprints = sprintRepository.findByUsuario_IdUsuario(idUsuario, 
+                    org.springframework.data.domain.Pageable.unpaged()).getContent();
+
+            if (!ultimosHumor.isEmpty()) {
+                double mediaHumor = ultimosHumor.stream()
+                        .mapToInt(Humor::getNivelHumor)
+                        .average()
+                        .orElse(3.0);
+                double mediaEnergia = ultimosHumor.stream()
+                        .mapToInt(Humor::getNivelEnergia)
+                        .average()
+                        .orElse(3.0);
+                contexto.append(String.format("- Média de humor: %.1f/5\n", mediaHumor));
+                contexto.append(String.format("- Média de energia: %.1f/5\n", mediaEnergia));
+            } else {
+                contexto.append("- Sem registros de humor recentes\n");
+            }
+
+            contexto.append(String.format("- Hábitos registrados nos últimos 7 dias: %d\n", habitos.size()));
+            contexto.append(String.format("- Total de sprints: %d\n", sprints.size()));
+
+            if (gptService != null) {
+                return gptService.gerarConteudoAssistente(tipoConsulta, contexto.toString());
+            } else {
+                // Fallback se GPTService não estiver disponível
+                return criarAssistentePadrao(tipoConsulta);
+            }
+        } catch (Exception e) {
+            log.error("Erro ao gerar conteúdo do assistente", e);
+            return criarAssistentePadrao(tipoConsulta);
+        }
+    }
+
+    /**
+     * Cria assistente padrão quando GPT não disponível
+     */
+    private GPTService.AssistentePersonalizado criarAssistentePadrao(String tipoConsulta) {
+        // Usa o método padrão do GPTService
+        if (gptService != null) {
+            return gptService.gerarConteudoAssistente(tipoConsulta, "Sem dados históricos disponíveis.");
+        }
+        
+        // Fallback final
+        return GPTService.AssistentePersonalizado.builder()
+                .titulo("Dica do Assistente")
+                .conteudo("Continue cuidando de si mesmo e monitorando seu bem-estar.")
+                .tipo(tipoConsulta != null ? tipoConsulta : "motivacao")
+                .acoesPraticas(List.of("Mantenha hábitos saudáveis", "Faça pausas regulares", "Monitore seus indicadores"))
+                .reflexao("Como você pode melhorar seu bem-estar hoje?")
+                .build();
+    }
 }

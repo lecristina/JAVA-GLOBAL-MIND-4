@@ -4,6 +4,8 @@ import com.nexus.ai.AIService;
 import com.nexus.ai.GPTService;
 import com.nexus.application.dto.AnaliseRequestDTO;
 import com.nexus.application.dto.AnaliseResponseDTO;
+import com.nexus.application.dto.AssistenteRequestDTO;
+import com.nexus.application.dto.AssistenteResponseDTO;
 import com.nexus.application.dto.FeedbackRequestDTO;
 import com.nexus.application.dto.FeedbackResponseDTO;
 import com.nexus.application.mapper.AIAlertMapper;
@@ -79,6 +81,28 @@ public class IAService {
                 .resumoSemanal(analiseGPT.getResumo())
                 .riscoBurnout(analiseGPT.getRisco())
                 .sugestoes(analiseGPT.getSugestoes())
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
+    public AssistenteResponseDTO gerarConteudoAssistente(AssistenteRequestDTO request) {
+        // Busca o usuário
+        Usuario usuario = usuarioRepository.findById(request.getUsuarioId())
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+
+        // Gera conteúdo usando GPT
+        GPTService.AssistentePersonalizado conteudo = aiService.gerarConteudoAssistente(
+                request.getUsuarioId(),
+                request.getTipoConsulta() != null ? request.getTipoConsulta() : "motivacao"
+        );
+
+        // Converte para DTO
+        return AssistenteResponseDTO.builder()
+                .titulo(conteudo.getTitulo())
+                .conteudo(conteudo.getConteudo())
+                .tipo(conteudo.getTipo())
+                .acoesPraticas(conteudo.getAcoesPraticas())
+                .reflexao(conteudo.getReflexao())
                 .timestamp(LocalDateTime.now())
                 .build();
     }

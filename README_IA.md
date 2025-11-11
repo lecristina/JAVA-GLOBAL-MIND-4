@@ -36,6 +36,47 @@ mvn spring-boot:run
 
 ## 📡 Endpoints
 
+### POST /ia/assistente
+
+**NOVO!** Assistente pessoal completo de saúde mental com múltiplos tipos de conteúdo.
+
+**Request:**
+```json
+{
+  "usuarioId": 1,
+  "tipoConsulta": "curiosidade"
+}
+```
+
+**Tipos disponíveis:**
+- `curiosidade` - Curiosidades educativas sobre saúde mental e produtividade
+- `prevencao` - Dicas de prevenção de burnout e estresse
+- `motivacao` - Mensagens motivacionais personalizadas
+- `dica_pratica` - Dicas práticas acionáveis para implementar hoje
+- `reflexao` - Reflexões profundas e perguntas para autoconhecimento
+
+**Response:**
+```json
+{
+  "titulo": "Curiosidade: O Poder das Pausas",
+  "conteudo": "Estudos mostram que fazer pausas de 5-10 minutos a cada 90 minutos...",
+  "tipo": "curiosidade",
+  "acoesPraticas": [
+    "Configure lembretes para pausas a cada 90 minutos",
+    "Use a técnica Pomodoro (25min trabalho, 5min pausa)",
+    "Durante as pausas, faça algo completamente diferente do trabalho"
+  ],
+  "reflexao": "Como você pode incorporar pausas regulares na sua rotina?",
+  "timestamp": "2025-11-11T15:30:00"
+}
+```
+
+**Características:**
+- ✅ Conteúdo personalizado baseado no contexto do usuário
+- ✅ Ações práticas para aplicar na vida real
+- ✅ Reflexões para autoconhecimento
+- ✅ Funciona como um verdadeiro ajudante pessoal
+
 ### POST /ia/feedback
 
 Gera feedback empático personalizado usando GPT.
