@@ -1,0 +1,81 @@
+# Production Configuration
+spring:
+  application:
+    name: nexus
+  
+  datasource:
+    # Tente diferentes formatos de URL Oracle se necessário:
+    # Formato 1: jdbc:oracle:thin:@//host:port/service
+    # Formato 2: jdbc:oracle:thin:@host:port:ORCL
+    # Formato 3: jdbc:oracle:thin:@(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=host)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=ORCL)))
+    url: ${DB_URL:jdbc:oracle:thin:@oracle.fiap.com.br:1521:ORCL}
+    username: ${DB_USERNAME:rm555241}
+    password: ${DB_PASSWORD:230205}
+    driver-class-name: oracle.jdbc.OracleDriver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        dialect: org.hibernate.dialect.OracleDialect
+        default_schema:
+
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    queue:
+      burnout-alert: ${RABBITMQ_QUEUE_BURNOUT:burnout.alert.queue}
+
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY}
+      chat:
+        options:
+          model: gpt-3.5-turbo
+          temperature: 0.7
+
+  web:
+    locale: pt_BR
+    locale-resolver: fixed
+  messages:
+    basename: messages
+    encoding: UTF-8
+
+  cache:
+    type: caffeine
+    cache-names: humor,sprints,habitos,badges
+
+server:
+  port: ${PORT:8080}
+
+jwt:
+  secret: ${JWT_SECRET:MindTrackNexusSecretKeyForJWTTokenGeneration2024SecureKey}
+  expiration: ${JWT_EXPIRATION:86400000}
+
+logging:
+  level:
+    com.nexus: INFO
+    org.springframework: WARN
+    org.hibernate: WARN
+    root: INFO
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+
+
+
