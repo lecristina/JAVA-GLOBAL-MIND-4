@@ -72,11 +72,27 @@ public class IAController {
         description = "Analisa uma foto do ambiente de trabalho usando modelo de Deep Learning (Hugging Face). " +
                      "Detecta objetos, analisa organização, iluminação e nível de foco. " +
                      "Retorna sugestões práticas para melhorar o ambiente de trabalho. " +
-                     "A análise é salva na tabela t_mt_alertas_ia com tipo 'ANALISE_AMBIENTE'."
+                     "A análise é salva na tabela t_mt_alertas_ia com tipo 'ANALISE_AMBIENTE'. " +
+                     "\n\n" +
+                     "**Como testar no Swagger:**\n" +
+                     "1. Clique em 'Try it out'\n" +
+                     "2. Preencha 'usuarioId' (ex: 1)\n" +
+                     "3. Clique em 'Choose File' e selecione uma imagem\n" +
+                     "4. Clique em 'Execute'\n" +
+                     "5. Aguarde alguns segundos (primeira chamada pode demorar - modelo carregando)"
+    )
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+        description = "Upload de imagem do ambiente de trabalho",
+        required = true,
+        content = @io.swagger.v3.oas.annotations.media.Content(
+            mediaType = MediaType.MULTIPART_FORM_DATA_VALUE
+        )
     )
     @PreAuthorize("hasAnyRole('PROFISSIONAL', 'GESTOR')")
     public ResponseEntity<AnaliseAmbienteResponseDTO> analisarAmbienteTrabalho(
+            @io.swagger.v3.oas.annotations.Parameter(description = "Arquivo de imagem (JPEG, PNG, etc)", required = true)
             @RequestParam("foto") MultipartFile foto,
+            @io.swagger.v3.oas.annotations.Parameter(description = "ID do usuário", required = true, example = "1")
             @RequestParam("usuarioId") Integer usuarioId) {
         
         AnaliseAmbienteResponseDTO response = iaService.analisarAmbienteTrabalho(foto, usuarioId);

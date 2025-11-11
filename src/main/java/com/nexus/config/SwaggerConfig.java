@@ -41,7 +41,7 @@ public class SwaggerConfig {
     public GroupedOpenApi publicApi() {
         return GroupedOpenApi.builder()
                 .group("nexus-api")
-                .pathsToMatch("/api/**")
+                .pathsToMatch("/api/**", "/ia/**")
                 .build();
     }
 }
