@@ -74,6 +74,45 @@ public class UsuarioService {
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
         return userMapper.toDTO(usuario);
     }
+
+    @Transactional
+    public UsuarioDTO atualizar(Integer id, UsuarioDTO dto) {
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+
+        // Verificar se o email está sendo alterado e se já existe
+        if (!usuario.getEmail().equals(dto.getEmail()) && 
+            usuarioRepository.existsByEmail(dto.getEmail())) {
+            throw new RuntimeException("Email já cadastrado");
+        }
+
+        // Atualizar campos
+        usuario.setNome(dto.getNome());
+        usuario.setEmail(dto.getEmail());
+        usuario.setPerfil(dto.getPerfil());
+        usuario.setEmpresa(dto.getEmpresa());
+
+        // Atualizar senha apenas se fornecida
+        if (dto.getSenha() != null && !dto.getSenha().isEmpty()) {
+            usuario.setSenhaHash(passwordEncoder.encode(dto.getSenha()));
+        }
+
+        Usuario updated = usuarioRepository.save(usuario);
+        usuarioRepository.flush(); // Garantir que os dados sejam persistidos imediatamente
+        log.info("Usuário atualizado e salvo no banco: ID={}, Email={}", updated.getIdUsuario(), updated.getEmail());
+        
+        return userMapper.toDTO(updated);
+    }
+
+    @Transactional
+    public void deletar(Integer id) {
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+        
+        usuarioRepository.delete(usuario);
+        usuarioRepository.flush(); // Garantir que a exclusão seja persistida imediatamente
+        log.info("Usuário deletado com sucesso: ID={}, Email={}", id, usuario.getEmail());
+    }
 }
 
 
