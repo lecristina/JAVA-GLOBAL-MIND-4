@@ -26,3 +26,9 @@ public class ChatRequestDTO {
     private Integer idConversaPai;
 }
 
+
+
+
+
+
+

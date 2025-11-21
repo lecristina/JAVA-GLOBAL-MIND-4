@@ -16,3 +16,9 @@ public class AnaliseAmbienteRequestDTO {
     private Integer usuarioId;
 }
 
+
+
+
+
+
+

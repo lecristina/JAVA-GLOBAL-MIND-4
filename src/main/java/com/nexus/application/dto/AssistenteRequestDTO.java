@@ -16,5 +16,13 @@ public class AssistenteRequestDTO {
     private Integer usuarioId;
     
     private String tipoConsulta; // "curiosidade", "prevencao", "motivacao", "dica_pratica", "reflexao"
+    
+    // Campos para processamento de mensagens (agenda, conteudo, motivacao)
+    private String tipo; // "agenda", "conteudo", "motivacao"
+    private String mensagem; // Mensagem do usuário para processar
 }
+
+
+
+
 

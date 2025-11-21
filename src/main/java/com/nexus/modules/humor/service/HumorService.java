@@ -10,6 +10,7 @@ import com.nexus.messaging.events.BurnoutAlertEvent;
 import com.nexus.messaging.producer.AlertProducer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
@@ -27,11 +28,14 @@ public class HumorService {
     private final HumorRepository humorRepository;
     private final UsuarioRepository usuarioRepository;
     private final MoodEntryMapper moodEntryMapper;
-    private final AlertProducer alertProducer;
+    
+    @Autowired(required = false)
+    private AlertProducer alertProducer;
 
     @Transactional
     @CacheEvict(value = "humor", allEntries = true)
     public HumorDTO criar(HumorDTO dto) {
+        log.debug("🗑️ Cache 'humor' invalidado - novo registro sendo criado");
         Usuario usuario = usuarioRepository.findById(dto.getIdUsuario())
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
@@ -51,8 +55,11 @@ public class HumorService {
 
     @Cacheable(value = "humor", key = "#idUsuario + '_' + #pageable.pageNumber + '_' + #pageable.pageSize")
     public Page<HumorDTO> listarPorUsuario(Integer idUsuario, Pageable pageable) {
-        return humorRepository.findByUsuario_IdUsuario(idUsuario, pageable)
+        log.debug("🔍 Buscando humor do usuário {} - Verificando cache primeiro...", idUsuario);
+        Page<HumorDTO> result = humorRepository.findByUsuario_IdUsuario(idUsuario, pageable)
                 .map(moodEntryMapper::toDTO);
+        log.debug("✅ Dados retornados do cache ou banco de dados");
+        return result;
     }
 
     public HumorDTO buscarPorId(Integer id) {
@@ -98,8 +105,12 @@ public class HumorService {
                         .nivelRisco(nivelRisco)
                         .build();
 
+                if (alertProducer != null) {
                 alertProducer.sendBurnoutAlert(event);
                 log.info("Alerta de burnout enviado para usuário: {}", humor.getUsuario().getIdUsuario());
+                } else {
+                    log.warn("⚠️ RabbitMQ não configurado - Alerta de burnout não enviado para fila (usuário: {})", humor.getUsuario().getIdUsuario());
+                }
             }
         }
     }

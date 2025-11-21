@@ -34,3 +34,9 @@ public interface ConversaIARepository extends JpaRepository<ConversaIA, Integer>
     ConversaIA findFirstByUsuario_IdUsuarioOrderByDataMensagemDesc(Integer idUsuario);
 }
 
+
+
+
+
+
+

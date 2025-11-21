@@ -7,10 +7,11 @@ import com.nexus.domain.model.Sprint;
 import com.nexus.domain.model.Usuario;
 import com.nexus.infrastructure.repository.SprintRepository;
 import com.nexus.infrastructure.repository.UsuarioRepository;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -20,18 +21,29 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class SprintService {
 
     private final SprintRepository sprintRepository;
     private final UsuarioRepository usuarioRepository;
     private final SprintMapper sprintMapper;
-    private final AIService aiService;
+    
+    @Autowired(required = false)
+    @Lazy
+    private AIService aiService;
+    
+    public SprintService(SprintRepository sprintRepository, 
+                        UsuarioRepository usuarioRepository, 
+                        SprintMapper sprintMapper) {
+        this.sprintRepository = sprintRepository;
+        this.usuarioRepository = usuarioRepository;
+        this.sprintMapper = sprintMapper;
+    }
 
     @Transactional
     @CacheEvict(value = "sprints", allEntries = true)
     public SprintDTO criar(SprintDTO dto) {
+        log.debug("🗑️ Cache 'sprints' invalidado - nova sprint sendo criada");
         Usuario usuario = usuarioRepository.findById(dto.getIdUsuario())
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
@@ -56,8 +68,11 @@ public class SprintService {
 
     @Cacheable(value = "sprints", key = "#idUsuario + '_' + #pageable.pageNumber + '_' + #pageable.pageSize")
     public Page<SprintDTO> listarPorUsuario(Integer idUsuario, Pageable pageable) {
-        return sprintRepository.findByUsuario_IdUsuario(idUsuario, pageable)
+        log.debug("🔍 Buscando sprints do usuário {} - Verificando cache primeiro...", idUsuario);
+        Page<SprintDTO> result = sprintRepository.findByUsuario_IdUsuario(idUsuario, pageable)
                 .map(sprintMapper::toDTO);
+        log.debug("✅ Dados retornados do cache ou banco de dados");
+        return result;
     }
 
     public SprintDTO buscarPorId(Integer id) {
@@ -95,7 +110,14 @@ public class SprintService {
     }
 
     public String obterMensagemMotivacional(Integer idUsuario) {
-        return aiService.gerarMensagemMotivacional(idUsuario);
+        if (aiService != null) {
+            try {
+                return aiService.gerarMensagemMotivacional(idUsuario);
+            } catch (Exception e) {
+                log.warn("Erro ao usar AIService, usando fallback", e);
+            }
+        }
+        return "Continue focado e determinado. Você está no caminho certo!";
     }
 
     private BigDecimal calcularProdutividade(Integer tarefas, Integer commits) {
