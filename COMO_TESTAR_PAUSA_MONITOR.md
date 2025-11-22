@@ -548,3 +548,4 @@ Diferença detectada: 25000 pixels - Movimento: true
 **Pronto! Agora você pode testar o monitoramento de pausas de várias formas! 🚀**
 
 
+

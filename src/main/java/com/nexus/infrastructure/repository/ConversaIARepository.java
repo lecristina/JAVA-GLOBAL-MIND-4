@@ -40,3 +40,4 @@ public interface ConversaIARepository extends JpaRepository<ConversaIA, Integer>
 
 
 
+

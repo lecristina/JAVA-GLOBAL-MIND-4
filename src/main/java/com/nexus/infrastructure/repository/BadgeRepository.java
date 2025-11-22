@@ -19,3 +19,4 @@ public interface BadgeRepository extends JpaRepository<Badge, Integer> {
 
 
 
+
