@@ -2,7 +2,7 @@
 
 API completa para monitoramento de saúde mental e produtividade no trabalho de TI.
 ---
-# Integrantes
+## Integrantes
 
 - ANDRÉ ROGÉRIO VIEIRA PAVANELA ALTOBELLI ANTUNES RM: 554764
 - LETICIA CRISTINA DOS SANTOS PASSOS RM: 555241
