@@ -338,6 +338,34 @@ Database (Oracle)
 
 ## 📝 Endpoints Completos da API
 
+> **⚠️ Importante:** Todos os endpoints (exceto `/api/auth/*` e `/`) requerem autenticação JWT. Adicione o header:
+> ```
+> Authorization: Bearer <seu-token-jwt>
+> ```
+
+---
+
+### 🏠 Home
+
+#### GET `/`
+Informações básicas da API.
+
+**Response:**
+```json
+{
+  "message": "Bem-vindo à API MindTrack / Nexus",
+  "version": "1.0.0",
+  "documentation": "http://localhost:8080/swagger-ui.html",
+  "endpoints": {
+    "swagger": "/swagger-ui.html",
+    "api-docs": "/v3/api-docs",
+    "auth": "/api/auth/login"
+  }
+}
+```
+
+---
+
 ### 🔐 Autenticação
 
 #### POST `/api/auth/registro`
@@ -353,7 +381,7 @@ Registra novo usuário no sistema.
 }
 ```
 
-**Response:**
+**Response (201 Created):**
 ```json
 {
   "idUsuario": 1,
@@ -375,7 +403,7 @@ Autentica usuário e retorna token JWT.
 }
 ```
 
-**Response:**
+**Response (200 OK):**
 ```json
 {
   "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
@@ -396,6 +424,53 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 ---
 
+### 👤 Usuários
+
+#### GET `/api/usuarios/{id}`
+Busca usuário por ID.
+
+**Response (200 OK):**
+```json
+{
+  "idUsuario": 1,
+  "nome": "João Silva",
+  "email": "joao@example.com",
+  "perfil": "PROFISSIONAL",
+  "dataCadastro": "2025-01-15"
+}
+```
+
+#### PUT `/api/usuarios/{id}`
+Atualiza dados do usuário.
+
+**Request:**
+```json
+{
+  "nome": "João Silva Santos",
+  "email": "joao.santos@example.com",
+  "perfil": "PROFISSIONAL"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "idUsuario": 1,
+  "nome": "João Silva Santos",
+  "email": "joao.santos@example.com",
+  "perfil": "PROFISSIONAL",
+  "dataCadastro": "2025-01-15"
+}
+```
+
+#### DELETE `/api/usuarios/{id}`
+Deleta usuário (apenas GESTOR).
+
+**Response (204 No Content):**
+(Sem corpo de resposta)
+
+---
+
 ### 😊 Humor e Energia
 
 #### POST `/api/humor`
@@ -411,7 +486,7 @@ Cria registro de humor e energia do dia.
 }
 ```
 
-**Response:**
+**Response (201 Created):**
 ```json
 {
   "idHumor": 1,
@@ -428,12 +503,17 @@ Cria registro de humor e energia do dia.
 #### GET `/api/humor/usuario/{idUsuario}?page=0&size=10`
 Lista registros de humor paginados.
 
-**Response:**
+**Parâmetros de Query:**
+- `page`: Número da página (padrão: 0)
+- `size`: Tamanho da página (padrão: 10)
+
+**Response (200 OK):**
 ```json
 {
   "content": [
     {
       "idHumor": 1,
+      "idUsuario": 1,
       "nivelHumor": 4,
       "nivelEnergia": 3,
       "dataRegistro": "2025-01-15"
@@ -442,18 +522,55 @@ Lista registros de humor paginados.
   "totalElements": 1,
   "totalPages": 1,
   "size": 10,
-  "number": 0
+  "number": 0,
+  "first": true,
+  "last": true
 }
 ```
 
 #### GET `/api/humor/{id}`
 Busca registro específico por ID.
 
+**Response (200 OK):**
+```json
+{
+  "idHumor": 1,
+  "idUsuario": 1,
+  "nivelHumor": 4,
+  "nivelEnergia": 3,
+  "dataRegistro": "2025-01-15"
+}
+```
+
 #### PUT `/api/humor/{id}`
 Atualiza registro existente.
 
+**Request:**
+```json
+{
+  "idUsuario": 1,
+  "nivelHumor": 5,
+  "nivelEnergia": 4,
+  "dataRegistro": "2025-01-15"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "idHumor": 1,
+  "idUsuario": 1,
+  "nivelHumor": 5,
+  "nivelEnergia": 4,
+  "dataRegistro": "2025-01-15"
+}
+```
+
 #### DELETE `/api/humor/{id}`
 Remove registro.
+
+**Response (204 No Content):**
+(Sem corpo de resposta)
 
 ---
 
@@ -474,7 +591,7 @@ Cria registro de sprint.
 }
 ```
 
-**Response:**
+**Response (201 Created):**
 ```json
 {
   "idSprint": 1,
@@ -491,15 +608,90 @@ Cria registro de sprint.
 #### GET `/api/sprints/usuario/{idUsuario}?page=0&size=10`
 Lista sprints do usuário (paginado).
 
-#### GET `/api/sprints/usuario/{idUsuario}/motivacao`
-Gera mensagem motivacional personalizada via IA.
+**Parâmetros de Query:**
+- `page`: Número da página (padrão: 0)
+- `size`: Tamanho da página (padrão: 10)
 
-**Response:**
+**Response (200 OK):**
 ```json
 {
-  "mensagem": "Parabéns! Você completou 80% das tarefas da Sprint 1. Continue assim!",
-  "timestamp": "2025-01-15T10:30:00"
+  "content": [
+    {
+      "idSprint": 1,
+      "idUsuario": 1,
+      "nomeSprint": "Sprint 1",
+      "tarefasCompletas": 8,
+      "tarefasTotais": 10,
+      "performance": 80.0,
+      "dataInicio": "2025-01-15",
+      "dataFim": "2025-01-22"
+    }
+  ],
+  "totalElements": 1,
+  "totalPages": 1,
+  "size": 10,
+  "number": 0
 }
+```
+
+#### GET `/api/sprints/{id}`
+Busca sprint por ID.
+
+**Response (200 OK):**
+```json
+{
+  "idSprint": 1,
+  "idUsuario": 1,
+  "nomeSprint": "Sprint 1",
+  "tarefasCompletas": 8,
+  "tarefasTotais": 10,
+  "performance": 80.0,
+  "dataInicio": "2025-01-15",
+  "dataFim": "2025-01-22"
+}
+```
+
+#### PUT `/api/sprints/{id}`
+Atualiza sprint.
+
+**Request:**
+```json
+{
+  "idUsuario": 1,
+  "nomeSprint": "Sprint 1 - Atualizada",
+  "tarefasCompletas": 9,
+  "tarefasTotais": 10,
+  "dataInicio": "2025-01-15",
+  "dataFim": "2025-01-22"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "idSprint": 1,
+  "idUsuario": 1,
+  "nomeSprint": "Sprint 1 - Atualizada",
+  "tarefasCompletas": 9,
+  "tarefasTotais": 10,
+  "performance": 90.0,
+  "dataInicio": "2025-01-15",
+  "dataFim": "2025-01-22"
+}
+```
+
+#### DELETE `/api/sprints/{id}`
+Deleta sprint.
+
+**Response (204 No Content):**
+(Sem corpo de resposta)
+
+#### GET `/api/sprints/usuario/{idUsuario}/motivacao`
+Gera mensagem motivacional personalizada via IA baseada nas sprints do usuário.
+
+**Response (200 OK):**
+```json
+"Parabéns! Você completou 80% das tarefas da Sprint 1. Continue assim! Você está no caminho certo para alcançar seus objetivos."
 ```
 
 ---
@@ -519,7 +711,7 @@ Cria novo hábito.
 }
 ```
 
-**Response:**
+**Response (201 Created):**
 ```json
 {
   "idHabito": 1,
@@ -534,15 +726,82 @@ Cria novo hábito.
 #### GET `/api/habitos/usuario/{idUsuario}?page=0&size=10`
 Lista hábitos do usuário (paginado).
 
+**Parâmetros de Query:**
+- `page`: Número da página (padrão: 0)
+- `size`: Tamanho da página (padrão: 10)
+
+**Response (200 OK):**
+```json
+{
+  "content": [
+    {
+      "idHabito": 1,
+      "idUsuario": 1,
+      "nomeHabito": "Exercitar-se",
+      "descricao": "30 minutos de exercício diário",
+      "pontuacao": 10,
+      "dataCriacao": "2025-01-15"
+    }
+  ],
+  "totalElements": 1,
+  "totalPages": 1,
+  "size": 10,
+  "number": 0
+}
+```
+
+#### GET `/api/habitos/{id}`
+Busca hábito por ID.
+
+**Response (200 OK):**
+```json
+{
+  "idHabito": 1,
+  "idUsuario": 1,
+  "nomeHabito": "Exercitar-se",
+  "descricao": "30 minutos de exercício diário",
+  "pontuacao": 10,
+  "dataCriacao": "2025-01-15"
+}
+```
+
+#### PUT `/api/habitos/{id}`
+Atualiza hábito.
+
+**Request:**
+```json
+{
+  "idUsuario": 1,
+  "nomeHabito": "Exercitar-se - Atualizado",
+  "descricao": "45 minutos de exercício diário",
+  "pontuacao": 15
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "idHabito": 1,
+  "idUsuario": 1,
+  "nomeHabito": "Exercitar-se - Atualizado",
+  "descricao": "45 minutos de exercício diário",
+  "pontuacao": 15,
+  "dataCriacao": "2025-01-15"
+}
+```
+
+#### DELETE `/api/habitos/{id}`
+Deleta hábito.
+
+**Response (204 No Content):**
+(Sem corpo de resposta)
+
 #### GET `/api/habitos/usuario/{idUsuario}/pontuacao`
 Retorna pontuação total do usuário.
 
-**Response:**
+**Response (200 OK):**
 ```json
-{
-  "pontuacaoTotal": 150,
-  "totalHabitos": 5
-}
+150
 ```
 
 **Comportamento:**
@@ -552,10 +811,32 @@ Retorna pontuação total do usuário.
 
 ### 🏆 Badges (Gamificação)
 
+#### POST `/api/badges`
+Cria novo badge.
+
+**Request:**
+```json
+{
+  "nomeBadge": "Mestre",
+  "descricao": "500 pontos conquistados",
+  "pontosRequeridos": 500
+}
+```
+
+**Response (201 Created):**
+```json
+{
+  "idBadge": 3,
+  "nomeBadge": "Mestre",
+  "descricao": "500 pontos conquistados",
+  "pontosRequeridos": 500
+}
+```
+
 #### GET `/api/badges`
 Lista todos os badges disponíveis (com cache).
 
-**Response:**
+**Response (200 OK):**
 ```json
 [
   {
@@ -569,21 +850,56 @@ Lista todos os badges disponíveis (com cache).
     "nomeBadge": "Veterano",
     "descricao": "100 pontos conquistados",
     "pontosRequeridos": 100
+  },
+  {
+    "idBadge": 3,
+    "nomeBadge": "Mestre",
+    "descricao": "500 pontos conquistados",
+    "pontosRequeridos": 500
   }
 ]
 ```
 
-#### POST `/api/badges`
-Cria novo badge (apenas GESTOR).
+#### GET `/api/badges/{id}`
+Busca badge por ID.
+
+**Response (200 OK):**
+```json
+{
+  "idBadge": 1,
+  "nomeBadge": "Iniciante",
+  "descricao": "Primeiros passos",
+  "pontosRequeridos": 10
+}
+```
+
+#### PUT `/api/badges/{id}`
+Atualiza badge.
 
 **Request:**
 ```json
 {
-  "nomeBadge": "Mestre",
-  "descricao": "500 pontos conquistados",
-  "pontosRequeridos": 500
+  "nomeBadge": "Iniciante - Atualizado",
+  "descricao": "Primeiros passos no sistema",
+  "pontosRequeridos": 10
 }
 ```
+
+**Response (200 OK):**
+```json
+{
+  "idBadge": 1,
+  "nomeBadge": "Iniciante - Atualizado",
+  "descricao": "Primeiros passos no sistema",
+  "pontosRequeridos": 10
+}
+```
+
+#### DELETE `/api/badges/{id}`
+Deleta badge.
+
+**Response (204 No Content):**
+(Sem corpo de resposta)
 
 ---
 
@@ -599,10 +915,10 @@ Gera feedback empático baseado no humor e produtividade do usuário.
 }
 ```
 
-**Response:**
+**Response (201 Created):**
 ```json
 {
-  "mensagem": "Vejo que você está passando por um momento difícil...",
+  "mensagem": "Vejo que você está passando por um momento difícil. Seus níveis de humor e energia estão baixos. Lembre-se de que é normal ter dias assim. Que tal fazer uma pausa e respirar fundo?",
   "tipoAlerta": "EMPATICO",
   "timestamp": "2025-01-15T10:30:00"
 }
@@ -618,14 +934,15 @@ Gera análise semanal completa (últimos 7 dias).
 }
 ```
 
-**Response:**
+**Response (200 OK):**
 ```json
 {
-  "resumoSemanal": "Esta semana você manteve um bom equilíbrio...",
+  "resumoSemanal": "Esta semana você manteve um bom equilíbrio entre humor e produtividade. Seus níveis de energia variaram, mas você conseguiu manter a consistência nas tarefas.",
   "riscoBurnout": "BAIXO",
   "sugestoes": [
     "Continue mantendo pausas regulares",
-    "Pratique exercícios físicos"
+    "Pratique exercícios físicos",
+    "Mantenha uma rotina de sono adequada"
   ],
   "timestamp": "2025-01-15T10:30:00"
 }
@@ -643,11 +960,27 @@ Assistente pessoal de saúde mental com múltiplos tipos de conteúdo.
 ```
 
 **Tipos disponíveis:**
-- `curiosidade` - Curiosidades educativas
+- `curiosidade` - Curiosidades educativas sobre saúde mental
 - `prevencao` - Dicas de prevenção de burnout
 - `motivacao` - Mensagens motivacionais
 - `dica_pratica` - Dicas práticas acionáveis
 - `reflexao` - Reflexões profundas
+
+**Response (Tipo Consulta):**
+```json
+{
+  "titulo": "Curiosidade: O Poder das Pausas",
+  "conteudo": "Estudos mostram que fazer pausas de 5-10 minutos a cada 90 minutos de trabalho pode aumentar a produtividade em até 20%. O cérebro precisa de momentos de descanso para processar informações e manter o foco.",
+  "tipo": "curiosidade",
+  "acoesPraticas": [
+    "Configure lembretes para pausas a cada 90 minutos",
+    "Use a técnica Pomodoro (25 min trabalho, 5 min pausa)",
+    "Durante a pausa, levante-se e caminhe"
+  ],
+  "reflexao": "Como você pode incorporar pausas regulares na sua rotina?",
+  "timestamp": "2025-01-15T10:30:00"
+}
+```
 
 **Request (Agenda):**
 ```json
@@ -658,7 +991,7 @@ Assistente pessoal de saúde mental com múltiplos tipos de conteúdo.
 }
 ```
 
-**Response (Agenda):**
+**Response (Agenda - JSON direto):**
 ```json
 {
   "tasks": [
@@ -684,18 +1017,27 @@ Assistente pessoal de saúde mental com múltiplos tipos de conteúdo.
 }
 ```
 
-**Response (Tipo Consulta):**
+**Request (Conteúdo/Motivação):**
 ```json
 {
-  "titulo": "Curiosidade: O Poder das Pausas",
-  "conteudo": "Estudos mostram que fazer pausas de 5-10 minutos...",
-  "tipo": "curiosidade",
-  "acoesPraticas": [
-    "Configure lembretes para pausas a cada 90 minutos",
-    "Use a técnica Pomodoro"
+  "usuarioId": 1,
+  "tipo": "motivacao",
+  "mensagem": "me manda algo pra me animar hoje, tô sem energia"
+}
+```
+
+**Response (Conteúdo/Motivação):**
+```json
+{
+  "tipo": "motivacao",
+  "titulo": "A energia vem do propósito",
+  "conteudo": "Você não precisa estar 100% para dar o seu melhor — só precisa começar. Cada pequeno passo conta, e você já está no caminho.",
+  "acoes_praticas": [
+    "Faça algo pequeno por você hoje",
+    "Lembre-se do motivo que te move",
+    "Respire fundo e dê o primeiro passo"
   ],
-  "reflexao": "Como você pode incorporar pausas regulares na sua rotina?",
-  "timestamp": "2025-01-15T10:30:00"
+  "reflexao": "O que me inspira a continuar mesmo nos dias difíceis?"
 }
 ```
 
@@ -710,6 +1052,17 @@ Chat conversacional com IA - mantém contexto da conversa.
 }
 ```
 
+**Response (Primeira Mensagem):**
+```json
+{
+  "idConversa": 123,
+  "idConversaPai": null,
+  "mensagemUsuario": "Estou me sentindo muito estressado no trabalho",
+  "respostaIA": "Entendo que você está passando por um momento difícil. O estresse no trabalho pode ser desafiador. Vamos conversar sobre isso. O que especificamente está te causando mais estresse?",
+  "timestamp": "2025-01-15T10:30:00"
+}
+```
+
 **Request (Continuar Conversa):**
 ```json
 {
@@ -719,14 +1072,14 @@ Chat conversacional com IA - mantém contexto da conversa.
 }
 ```
 
-**Response:**
+**Response (Continuar Conversa):**
 ```json
 {
   "idConversa": 124,
   "idConversaPai": 123,
   "mensagemUsuario": "Como posso melhorar isso?",
-  "respostaIA": "Aqui estão algumas estratégias...",
-  "timestamp": "2025-01-15T10:30:00"
+  "respostaIA": "Aqui estão algumas estratégias que podem ajudar: 1) Faça pausas regulares durante o trabalho, 2) Pratique técnicas de respiração, 3) Organize suas tarefas por prioridade, 4) Comunique-se abertamente com sua equipe sobre suas preocupações. Lembre-se: cuidar de si mesmo não é egoísmo, é essencial.",
+  "timestamp": "2025-01-15T10:35:00"
 }
 ```
 
@@ -741,7 +1094,7 @@ Extrai tarefas estruturadas de mensagens em linguagem natural.
 }
 ```
 
-**Response:**
+**Response (200 OK):**
 ```json
 {
   "tarefas": [
@@ -757,7 +1110,7 @@ Extrai tarefas estruturadas de mensagens em linguagem natural.
     }
   ],
   "totalTarefas": 2,
-  "mensagemOriginal": "hoje preciso levar minha gata ao veterinário...",
+  "mensagemOriginal": "hoje preciso levar minha gata ao veterinário as 14 e preciso terminar a materia de java para o challenge",
   "timestamp": "2025-01-15T10:30:00"
 }
 ```
@@ -765,7 +1118,7 @@ Extrai tarefas estruturadas de mensagens em linguagem natural.
 #### POST `/ia/assistant/analisar`
 Processa mensagens e retorna JSON estruturado conforme tipo.
 
-**Request:**
+**Request (Agenda):**
 ```json
 {
   "usuarioId": 1,
@@ -774,7 +1127,7 @@ Processa mensagens e retorna JSON estruturado conforme tipo.
 }
 ```
 
-**Response:**
+**Response (Agenda):**
 ```json
 {
   "tasks": [
@@ -785,6 +1138,29 @@ Processa mensagens e retorna JSON estruturado conforme tipo.
       "prioridade": "Normal"
     }
   ]
+}
+```
+
+**Request (Conteúdo/Motivação):**
+```json
+{
+  "usuarioId": 1,
+  "tipo": "motivacao",
+  "mensagem": "me manda algo pra me animar hoje, tô sem energia"
+}
+```
+
+**Response (Conteúdo/Motivação):**
+```json
+{
+  "tipo": "motivacao",
+  "titulo": "A energia vem do propósito",
+  "conteudo": "Você não precisa estar 100% para dar o seu melhor — só precisa começar.",
+  "acoes_praticas": [
+    "Faça algo pequeno por você hoje",
+    "Lembre-se do motivo que te move"
+  ],
+  "reflexao": "O que me inspira a continuar mesmo nos dias difíceis?"
 }
 ```
 
@@ -807,7 +1183,7 @@ Monitora presença/ausência do usuário através de análise de movimento em fr
 }
 ```
 
-**Response:**
+**Response (200 OK):**
 ```json
 {
   "usuarioId": 1,
@@ -884,7 +1260,11 @@ setInterval(async () => {
 #### GET `/api/alertas/usuario/{idUsuario}?page=0&size=10`
 Lista alertas do usuário (paginado).
 
-**Response:**
+**Parâmetros de Query:**
+- `page`: Número da página (padrão: 0)
+- `size`: Tamanho da página (padrão: 10)
+
+**Response (200 OK):**
 ```json
 {
   "content": [
@@ -892,19 +1272,46 @@ Lista alertas do usuário (paginado).
       "idAlerta": 1,
       "idUsuario": 1,
       "tipoAlerta": "BURNOUT",
-      "mensagem": "Alerta: Seus níveis de humor e energia estão baixos...",
+      "mensagem": "Alerta: Seus níveis de humor e energia estão baixos. Considere fazer uma pausa e cuidar de si mesmo.",
       "dataAlerta": "2025-01-15T10:30:00"
     }
   ],
-  "totalElements": 1
+  "totalElements": 1,
+  "totalPages": 1,
+  "size": 10,
+  "number": 0
+}
+```
+
+#### GET `/api/alertas/{id}`
+Busca alerta por ID.
+
+**Response (200 OK):**
+```json
+{
+  "idAlerta": 1,
+  "idUsuario": 1,
+  "tipoAlerta": "BURNOUT",
+  "mensagem": "Alerta: Seus níveis de humor e energia estão baixos. Considere fazer uma pausa e cuidar de si mesmo.",
+  "dataAlerta": "2025-01-15T10:30:00"
 }
 ```
 
 #### GET `/api/alertas/usuario/{idUsuario}/mensagem-empatica`
 Gera mensagem empática personalizada via IA.
 
+**Response (200 OK):**
+```json
+"Vejo que você está passando por um momento difícil. Seus níveis de humor e energia estão baixos. Lembre-se de que é normal ter dias assim. Que tal fazer uma pausa e respirar fundo? Você não está sozinho nisso."
+```
+
 #### GET `/api/alertas/usuario/{idUsuario}/analise-risco`
 Gera análise de risco de burnout via IA.
+
+**Response (200 OK):**
+```json
+"Com base nos seus dados dos últimos 7 dias, identifiquei um risco MODERADO de burnout. Seus níveis de humor e energia têm variado, mas há sinais de cansaço acumulado. Recomendo: 1) Fazer pausas regulares, 2) Praticar exercícios físicos, 3) Manter uma rotina de sono adequada, 4) Buscar apoio quando necessário."
+```
 
 ---
 
