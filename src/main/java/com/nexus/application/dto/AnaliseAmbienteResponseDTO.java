@@ -23,3 +23,10 @@ public class AnaliseAmbienteResponseDTO {
     private Integer idAlerta;
 }
 
+
+
+
+
+
+
+

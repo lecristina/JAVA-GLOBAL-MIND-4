@@ -25,6 +25,7 @@ public class BadgeService {
     @Transactional
     @CacheEvict(value = "badges", allEntries = true)
     public BadgeDTO criar(BadgeDTO dto) {
+        log.debug("🗑️ Cache 'badges' invalidado - novo badge sendo criado");
         Badge badge = badgeMapper.toEntity(dto);
         Badge saved = badgeRepository.save(badge);
         badgeRepository.flush(); // Garantir que os dados sejam persistidos imediatamente
@@ -34,9 +35,12 @@ public class BadgeService {
 
     @Cacheable(value = "badges")
     public List<BadgeDTO> listarTodos() {
-        return badgeRepository.findAll().stream()
+        log.debug("🔍 Buscando badges - Verificando cache primeiro...");
+        List<BadgeDTO> result = badgeRepository.findAll().stream()
                 .map(badgeMapper::toDTO)
                 .collect(Collectors.toList());
+        log.debug("✅ Dados retornados do cache ou banco de dados");
+        return result;
     }
 
     public BadgeDTO buscarPorId(Integer id) {

@@ -45,3 +45,10 @@ public class ConversaIA {
     private String contexto; // Contexto adicional da conversa
 }
 
+
+
+
+
+
+
+

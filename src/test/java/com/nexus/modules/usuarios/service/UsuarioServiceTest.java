@@ -24,6 +24,18 @@ class UsuarioServiceTest {
     @Mock
     private PasswordEncoder passwordEncoder;
 
+    @Mock
+    private com.nexus.application.mapper.UserMapper userMapper;
+
+    @Mock
+    private com.nexus.security.JwtService jwtService;
+
+    @Mock
+    private org.springframework.security.authentication.AuthenticationManager authenticationManager;
+
+    @Mock
+    private com.nexus.security.CustomUserDetailsService userDetailsService;
+
     @InjectMocks
     private UsuarioService usuarioService;
 
@@ -51,8 +63,10 @@ class UsuarioServiceTest {
     @Test
     void testRegistrarUsuario() {
         when(usuarioRepository.existsByEmail(anyString())).thenReturn(false);
+        when(userMapper.toEntity(any(UsuarioDTO.class))).thenReturn(usuario);
         when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
         when(usuarioRepository.save(any(Usuario.class))).thenReturn(usuario);
+        when(userMapper.toDTO(any(Usuario.class))).thenReturn(usuarioDTO);
 
         UsuarioDTO result = usuarioService.registrar(usuarioDTO);
 

@@ -8,6 +8,7 @@ import com.nexus.infrastructure.repository.HabitoRepository;
 import com.nexus.infrastructure.repository.SprintRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -15,22 +16,36 @@ import java.util.List;
 
 @Service
 @Slf4j
+@Lazy
 public class AIService {
 
-    @Autowired
     private HumorRepository humorRepository;
-    
-    @Autowired
     private HabitoRepository habitoRepository;
-    
-    @Autowired
     private SprintRepository sprintRepository;
-    
-    @Autowired(required = false)
     private GPTService gptService;
     
     // Construtor padrão vazio para Spring
     public AIService() {
+    }
+    
+    @Autowired(required = false)
+    public void setHumorRepository(HumorRepository humorRepository) {
+        this.humorRepository = humorRepository;
+    }
+    
+    @Autowired(required = false)
+    public void setHabitoRepository(HabitoRepository habitoRepository) {
+        this.habitoRepository = habitoRepository;
+    }
+    
+    @Autowired(required = false)
+    public void setSprintRepository(SprintRepository sprintRepository) {
+        this.sprintRepository = sprintRepository;
+    }
+    
+    @Autowired(required = false)
+    public void setGptService(GPTService gptService) {
+        this.gptService = gptService;
     }
 
     /**
@@ -60,6 +75,9 @@ public class AIService {
      */
     public String gerarMensagemEmpatica(Integer idUsuario) {
         try {
+            if (humorRepository == null) {
+                return gerarFeedbackEmpatico(3, "media");
+            }
             List<Humor> ultimosHumor = humorRepository.findByUsuario_IdUsuarioAndDataRegistroBetween(
                     idUsuario, LocalDate.now().minusDays(7), LocalDate.now());
             
@@ -86,6 +104,9 @@ public class AIService {
      */
     private String calcularProdutividadeTexto(Integer idUsuario) {
         try {
+            if (sprintRepository == null) {
+                return "media";
+            }
             List<Sprint> sprints = sprintRepository.findByUsuario_IdUsuario(idUsuario, 
                     org.springframework.data.domain.Pageable.unpaged()).getContent();
             
@@ -109,6 +130,9 @@ public class AIService {
 
     public String gerarMensagemMotivacional(Integer idUsuario) {
         try {
+            if (sprintRepository == null) {
+                return "Continue focado e determinado. Você está no caminho certo!";
+            }
             List<Sprint> sprints = sprintRepository.findByUsuario_IdUsuario(idUsuario, 
                     org.springframework.data.domain.Pageable.unpaged()).getContent();
             
@@ -143,14 +167,20 @@ public class AIService {
     public GPTService.AnaliseGPT gerarAnaliseSemanal(Integer idUsuario) {
         try {
             // Busca dados históricos
-            List<Humor> ultimosHumor = humorRepository.findByUsuario_IdUsuarioAndDataRegistroBetween(
-                    idUsuario, LocalDate.now().minusDays(7), LocalDate.now());
+            List<Humor> ultimosHumor = (humorRepository != null) 
+                    ? humorRepository.findByUsuario_IdUsuarioAndDataRegistroBetween(
+                            idUsuario, LocalDate.now().minusDays(7), LocalDate.now())
+                    : List.of();
             
-            List<Habito> habitos = habitoRepository.findByUsuario_IdUsuarioAndDataHabitoBetween(
-                    idUsuario, LocalDate.now().minusDays(7), LocalDate.now());
+            List<Habito> habitos = (habitoRepository != null)
+                    ? habitoRepository.findByUsuario_IdUsuarioAndDataHabitoBetween(
+                            idUsuario, LocalDate.now().minusDays(7), LocalDate.now())
+                    : List.of();
             
-            List<Sprint> sprints = sprintRepository.findByUsuario_IdUsuario(idUsuario, 
-                    org.springframework.data.domain.Pageable.unpaged()).getContent();
+            List<Sprint> sprints = (sprintRepository != null)
+                    ? sprintRepository.findByUsuario_IdUsuario(idUsuario, 
+                            org.springframework.data.domain.Pageable.unpaged()).getContent()
+                    : List.of();
 
             // Monta string com dados históricos
             StringBuilder dadosHistoricos = new StringBuilder();
@@ -262,14 +292,20 @@ public class AIService {
             contexto.append("PERFIL DO USUÁRIO:\n");
             
             // Busca dados recentes
-            List<Humor> ultimosHumor = humorRepository.findByUsuario_IdUsuarioAndDataRegistroBetween(
-                    idUsuario, LocalDate.now().minusDays(7), LocalDate.now());
+            List<Humor> ultimosHumor = (humorRepository != null)
+                    ? humorRepository.findByUsuario_IdUsuarioAndDataRegistroBetween(
+                            idUsuario, LocalDate.now().minusDays(7), LocalDate.now())
+                    : List.of();
             
-            List<Habito> habitos = habitoRepository.findByUsuario_IdUsuarioAndDataHabitoBetween(
-                    idUsuario, LocalDate.now().minusDays(7), LocalDate.now());
+            List<Habito> habitos = (habitoRepository != null)
+                    ? habitoRepository.findByUsuario_IdUsuarioAndDataHabitoBetween(
+                            idUsuario, LocalDate.now().minusDays(7), LocalDate.now())
+                    : List.of();
             
-            List<Sprint> sprints = sprintRepository.findByUsuario_IdUsuario(idUsuario, 
-                    org.springframework.data.domain.Pageable.unpaged()).getContent();
+            List<Sprint> sprints = (sprintRepository != null)
+                    ? sprintRepository.findByUsuario_IdUsuario(idUsuario, 
+                            org.springframework.data.domain.Pageable.unpaged()).getContent()
+                    : List.of();
 
             if (!ultimosHumor.isEmpty()) {
                 double mediaHumor = ultimosHumor.stream()

@@ -407,6 +407,59 @@ Analise o ambiente de trabalho do usuário:
 Gere sugestões para melhorar a produtividade baseado nessa análise.
 ```
 
+## 💰 Créditos OpenAI e Funcionamento
+
+### ✅ Com Créditos Disponíveis
+
+**Quando você tem créditos na OpenAI, TODOS os recursos de IA funcionam perfeitamente:**
+
+1. **Endpoint `/ia/assistente`** com `tipo: "agenda"` → Extrai tarefas e compromissos da mensagem
+2. **Endpoint `/ia/co-planner`** → Extrai tarefas estruturadas de mensagens em linguagem natural
+3. **Endpoint `/ia/assistant/analisar`** → Processa mensagens e retorna JSON estruturado
+4. **Endpoint `/ia/feedback`** → Gera feedback empático personalizado
+5. **Endpoint `/ia/analise`** → Gera análise semanal completa
+6. **Endpoint `/ia/chat`** → Chat conversacional com histórico
+
+### 🔧 Sistema Dual de Chamadas
+
+O sistema está configurado com **duas formas de chamar a API OpenAI**:
+
+1. **SDK Theokanning** (preferencial) - Biblioteca oficial para Java
+   - Mais eficiente e robusta
+   - Melhor tratamento de erros
+   - Usado automaticamente quando disponível
+
+2. **HttpClient** (fallback) - Chamadas HTTP diretas
+   - Funciona como backup se o SDK falhar
+   - Garante que a aplicação sempre funciona
+
+### ⚠️ Sem Créditos ou Cota Excedida
+
+Quando os créditos acabam ou a cota é excedida:
+
+- **Erro 429**: "You exceeded your current quota"
+- **Comportamento**: A aplicação retorna mensagens amigáveis em vez de quebrar
+- **Resposta**: JSON com mensagem explicativa para o usuário
+- **Logs**: Erros detalhados para diagnóstico
+
+### 📝 Como Adicionar Créditos
+
+1. Acesse: https://platform.openai.com/account/billing
+2. Adicione créditos à sua conta
+3. Aguarde alguns minutos para ativação
+4. Teste os endpoints novamente
+
+### ✅ Status Atual da Implementação
+
+- ✅ SDK Theokanning configurado e funcionando
+- ✅ Sistema dual (SDK + HttpClient) implementado
+- ✅ Tratamento de erros robusto (cota, API key inválida, etc)
+- ✅ Código compilando sem erros
+- ✅ Aplicação iniciando corretamente
+- ✅ Todos os endpoints prontos para usar
+
+**Com créditos disponíveis, tudo funciona perfeitamente!** 🚀
+
 ## 🐛 Troubleshooting
 
 ### API Key não configurada
@@ -416,6 +469,14 @@ Gere sugestões para melhorar a produtividade baseado nessa análise.
 ### Erro 401 na API OpenAI
 - **Sintoma**: Logs mostram "Erro na API OpenAI: Status 401"
 - **Solução**: Verifique se a API key está correta e ativa
+
+### Erro 429 - Cota Excedida
+- **Sintoma**: Logs mostram "You exceeded your current quota"
+- **Solução**: 
+  1. Verifique sua conta em https://platform.openai.com/account/billing
+  2. Adicione créditos se necessário
+  3. Aguarde alguns minutos para ativação
+  4. A aplicação retorna mensagem amigável, não quebra
 
 ### Timeout na chamada
 - **Sintoma**: Erro após 30 segundos

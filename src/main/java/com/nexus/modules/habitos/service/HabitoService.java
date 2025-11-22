@@ -37,6 +37,7 @@ public class HabitoService {
     @Transactional
     @CacheEvict(value = "habitos", allEntries = true)
     public HabitoDTO criar(HabitoDTO dto) {
+        log.debug("🗑️ Cache 'habitos' invalidado - novo hábito sendo criado");
         Usuario usuario = usuarioRepository.findById(dto.getIdUsuario())
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
@@ -61,8 +62,11 @@ public class HabitoService {
 
     @Cacheable(value = "habitos", key = "#idUsuario + '_' + #pageable.pageNumber + '_' + #pageable.pageSize")
     public Page<HabitoDTO> listarPorUsuario(Integer idUsuario, Pageable pageable) {
-        return habitoRepository.findByUsuario_IdUsuario(idUsuario, pageable)
+        log.debug("🔍 Buscando hábitos do usuário {} - Verificando cache primeiro...", idUsuario);
+        Page<HabitoDTO> result = habitoRepository.findByUsuario_IdUsuario(idUsuario, pageable)
                 .map(habitMapper::toDTO);
+        log.debug("✅ Dados retornados do cache ou banco de dados");
+        return result;
     }
 
     public HabitoDTO buscarPorId(Integer id) {
