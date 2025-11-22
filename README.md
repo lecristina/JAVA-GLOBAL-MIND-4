@@ -1,6 +1,12 @@
 # MindTrack / Nexus API
 
 API completa para monitoramento de saúde mental e produtividade no trabalho de TI.
+---
+# Integrantes
+
+- ANDRÉ ROGÉRIO VIEIRA PAVANELA ALTOBELLI ANTUNES RM: 554764
+- LETICIA CRISTINA DOS SANTOS PASSOS RM: 555241
+- ENRICO FIGUEIREDO DEL GUERRA RM: 558604
 
 ## 🚀 Tecnologias
 
